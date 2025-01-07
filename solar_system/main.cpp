@@ -123,6 +123,8 @@ int main()
     lightingShader.use(); 
     lightingShader.setInt("texture_diffuse", 0);
 
+    // lamp_object
+    //__________________________________________
     
     float vertices[] = {
         -0.5f, -0.5f, -0.5f,
@@ -188,6 +190,8 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
         
+    //_________________________________________________
+
 
     planetNames = { "Sole", "Mercurio", "Venere", "Terra", "Marte", "Giove", "Saturno", "Urano", "Nettuno" };
 
@@ -209,6 +213,7 @@ int main()
     sfera.Model = translate(sfera.Model, vec3(0.0, 0.0, 0.0));
     sfera.positions = vec3(0.0, 0.0, 0.0);
     sfera.Model = scale(sfera.Model, vec3(1.0, 1.0, 1.0));
+    sfera.angle = 0.0f; 
     sfera.setTexture(texture[0]);
     scene.push_back(sfera);
  
@@ -218,6 +223,7 @@ int main()
         sfera.Model = mat4(1.0);
         sfera.Model = translate(sfera.Model, vec3(i*2.0, 0.0, 0.0));
         sfera.positions = vec3(i * 2.0, 0.0, 0.0);
+        sfera.angle = 0.0f; 
         sfera.Model = scale(sfera.Model, scaleValue[i]);
         sfera.setTexture(texture[i]);
 
@@ -226,6 +232,8 @@ int main()
     }
  
     imgui.Initilize_IMGUI();
+
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -277,29 +285,31 @@ int main()
         }
 
 
+        //orbital movement
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         if (deltaTime > 0.016f) {
             lastFrame = currentFrame;
-            for (int i = 1; i < NR_PLANETS; i++) {
-                float angle = i * 0.2f; // Angolo in gradi
-                float radians = glm::radians(angle);          // Converti in radianti
-
-                // Calcolare la nuova posizione sulla traiettoria orbitale
-                float x = scene[i].positions.x * cos(radians)- scene[i].positions.z * sin(radians); // Posizione x
-                float z = scene[i].positions.x * sin(radians) + scene[i].positions.z * cos(radians); // Posizione z
-
-                // La coordinata y rimane costante, quindi possiamo mantenerla a 0
-                scene[i].Model = glm::mat4(1.0f); // Reset della matrice Model
-                scene[i].Model = translate(scene[i].Model, glm::vec3(x, scene[i].positions.y, z)); // Traslazione
+            for (int i = 0; i < NR_PLANETS; i++) {
+                float angle = i * 0.2f; 
+                float radians = glm::radians(angle);          
+                float x = scene[i].positions.x * cos(radians)- scene[i].positions.z * sin(radians); 
+                float z = scene[i].positions.x * sin(radians) + scene[i].positions.z * cos(radians); 
+                
+                scene[i].Model = glm::mat4(1.0f); 
+                scene[i].Model = translate(scene[i].Model, glm::vec3(x, scene[i].positions.y, z));
                 scene[i].positions = vec3(x, scene[i].positions.y, z);
-
-                // Applicare la scala del pianeta
+                scene[i].angle += angle; 
+                scene[i].Model = glm::rotate(scene[i].Model, glm::radians(scene[i].angle), glm::vec3(0.0f, 1.0f, 0.0f));
                 scene[i].Model = scale(scene[i].Model, scaleValue[i]);
             }
         }
 
+
+        // set material from gui
         //sfera.setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
+        
+        // draw meshes
         for(int i =0; i<NR_PLANETS; i++)
             scene[i].draw(lightingShader);
 
@@ -361,6 +371,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     else if (previousTrackballMode && !trackballMode) {
         camera.resetPosition(glm::vec3(0.0, 0.0, 3.0));
     }
+
+    camera.trackballMode = trackballMode;
 
     if (trackballMode) {
         camera.RotateAround(SCR_WIDTH, SCR_HEIGHT, xpos, ypos, lastX, lastY, Clockwise);

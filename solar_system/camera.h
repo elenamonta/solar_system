@@ -37,6 +37,7 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    bool trackballMode; 
 
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), float theta = THETA, float phi = PHI) : MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -69,18 +70,34 @@ public:
             Position -= Direction * velocity;
             Target = Position + Direction;
         }
-        if (direction == LEFT) {
-            Direction = Target - Position;
-            glm::vec3 slide_vec = glm::cross(Direction, glm::vec3(WorldUp)) * velocity;
-            Position -= slide_vec;
-            Target -=slide_vec;
+        if (!trackballMode)
+        {
+            if (direction == LEFT) {
+                Direction = Target - Position;
+                glm::vec3 slide_vec = glm::cross(Direction, glm::vec3(WorldUp)) * velocity;
+                Position -= slide_vec;
+                Target -= slide_vec;
+            }
+            if (direction == RIGHT) {
+                Direction = Target - Position;
+                glm::vec3 slide_vec = glm::cross(Direction, glm::vec3(WorldUp)) * velocity;
+                Position += slide_vec;
+                Target += slide_vec;
+            }
         }
-        if (direction == RIGHT) {
-            Direction = Target - Position;
-            glm::vec3 slide_vec = glm::cross(Direction, glm::vec3(WorldUp)) * velocity;
-            Position += slide_vec;
-            Target += slide_vec;
+        else
+        {
+            if (direction == LEFT) {
+                Direction = Position - Target;
+                Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(Direction, 0.0f));
+            }
+            if (direction == RIGHT) {
+                Direction = Position - Target;
+                Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(Direction, 0.0f));
+            }
         }
+               
+
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.

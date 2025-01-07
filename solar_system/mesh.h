@@ -35,6 +35,7 @@ public:
 	vec4 ancora_world;
 	GLuint textureID;
 	vec3 positions;
+	float angle; 
 
 	Mesh(meshType type, string meshName) {
 		switch (type) {
