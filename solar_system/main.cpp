@@ -10,8 +10,11 @@
 #include "mesh.h"
 #include "material.h"
 #include "texture.h"
-
+#include <random>
 #include <iostream>
+
+#define NR_PLANETS 9
+#define PI 3.141592653589793
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -19,13 +22,15 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods);
 
+GLFWwindow* window;
+
 // settings
 unsigned int SCR_WIDTH = 800;
 unsigned int SCR_HEIGHT = 800;
 float w_up = SCR_WIDTH, h_up = SCR_HEIGHT;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 4.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -34,21 +39,20 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-// lighting
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-
+//input
 bool trackballMode = false;
 bool previousTrackballMode = trackballMode;
-bool Clockwise = true; //orario
+bool Clockwise = true; //senso orario
 
-GLFWwindow* window;
 
+vector<string> planetNames;
 vector<Mesh> scene;
 int selected_obj = -1;
 
 glm::mat4 projection;
 glm::mat4 view;
 
+//gestione texture
 string imageDir = "Texture/";
 vector<string> pathTexture; 
 vector<int> texture; 
@@ -75,8 +79,8 @@ int main()
         glfwTerminate();
         return -1;
     }
+    
     Gui imgui(window);
-
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -94,6 +98,18 @@ int main()
 
 
     pathTexture.push_back(imageDir + "2k_sun.jpg");
+    pathTexture.push_back(imageDir + "2k_mercury.jpg");
+    pathTexture.push_back(imageDir + "2k_venus.jpg");
+    pathTexture.push_back(imageDir + "earth2k.jpg");
+    pathTexture.push_back(imageDir + "2k_mars.jpg");
+    pathTexture.push_back(imageDir + "2k_jupiter.jpg");
+    pathTexture.push_back(imageDir + "2k_saturn.jpg");
+    pathTexture.push_back(imageDir + "2k_uranus.jpg");
+    pathTexture.push_back(imageDir + "2k_neptune.jpg");
+
+    for (int i = 0; i < pathTexture.size(); i++) {
+        texture.push_back(Texture::loadTexture(pathTexture[i].c_str(), 0).ID);
+    }
 
     // configure global opengl state
     // -----------------------------
@@ -103,112 +119,117 @@ int main()
     // ------------------------------------
     Shader lightingShader("vertexShader.glsl", "fragmentShader.glsl");
     Shader lightCubeShader("vertexShader.glsl", "fragmentShader_light.glsl");
+    
+    lightingShader.use(); 
+    lightingShader.setInt("texture_diffuse", 0);
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
+    
     float vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
 
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f, -0.5f,  0.5f,
 
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
 
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
 
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f, -0.5f,
 
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+        -0.5f,  0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+         0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f, -0.5f
     };
+
 
     glm::vec3 pointLightPositions[] = {
-        glm::vec3(0.7f,  0.2f,  2.0f),
-        glm::vec3(1.2f, 1.0f, -1.0f)
+        glm::vec3(0.7f,  0.2f,  10.0f),
+        glm::vec3(0.0f, 0.0f, -7.0f)
     };
 
-    // first, configure the cube's VAO (and VBO)
-    unsigned int VBO, cubeVAO;
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &VBO);
+    
+    // Configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
+    unsigned int lightCubeVAO, lightCubeVBO;
+    glGenVertexArrays(1, &lightCubeVAO);
+    glGenBuffers(1, &lightCubeVBO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, lightCubeVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindVertexArray(cubeVAO);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-    unsigned int lightCubeVAO;
-    glGenVertexArrays(1, &lightCubeVAO);
     glBindVertexArray(lightCubeVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+        
 
-    for (int i = 0; i < pathTexture.size(); i++) {
-        texture.push_back(Texture().loadTexture(pathTexture[i].c_str(), 0).ID);
-    }
+    planetNames = { "Sole", "Mercurio", "Venere", "Terra", "Marte", "Giove", "Saturno", "Urano", "Nettuno" };
 
-    Mesh cubo(meshType::cubo, "cubo");
-    cubo.Model = mat4(1.0);
-    cubo.Model = translate(cubo.Model, vec3(0.0, 0.0, 0.0));
-    cubo.Model = scale(cubo.Model, vec3(0.5, 0.5, 0.5));
-    cubo.setMaterial(Material::getMaterial(MaterialType::Pink));
-    scene.push_back(cubo);
+    vector<vec3> scaleValue = {
+        {1.0, 1.0, 1.0}, //Sole
+        {0.3, 0.3, 0.3}, //Mercurio
+        {0.5, 0.5, 0.5}, //Venere
+        {0.6, 0.6, 0.6}, //Terra
+        {0.5, 0.5, 0.5}, //Marte
+        {0.9, 0.9, 0.9}, //Giove
+        {0.75, 0.75, 0.75}, //Saturno
+        {0.6, 0.6, 0.6}, //Urano
+        {0.3, 0.3, 0.3} //Nettuno
 
-    Mesh sfera(meshType::sfera, "pianeta");
+    };
+
+    Mesh sfera(meshType::sfera, planetNames[0]);
     sfera.Model = mat4(1.0);
     sfera.Model = translate(sfera.Model, vec3(0.0, 0.0, 0.0));
-    sfera.Model = scale(sfera.Model, vec3(0.5, 0.5, 0.5));
-    //sfera.setTexture(texture[0]);
-    sfera.setMaterial(Material::getMaterial(MaterialType::Emerald));
+    sfera.positions = vec3(0.0, 0.0, 0.0);
+    sfera.Model = scale(sfera.Model, vec3(1.0, 1.0, 1.0));
+    sfera.setTexture(texture[0]);
     scene.push_back(sfera);
+ 
+    
+    for (int i = 1; i < NR_PLANETS; i++) {
+        Mesh sfera(meshType::sfera, planetNames[i]);
+        sfera.Model = mat4(1.0);
+        sfera.Model = translate(sfera.Model, vec3(i*2.0, 0.0, 0.0));
+        sfera.positions = vec3(i * 2.0, 0.0, 0.0);
+        sfera.Model = scale(sfera.Model, scaleValue[i]);
+        sfera.setTexture(texture[i]);
 
+        //sfera.setMaterial(Material::getMaterial(MaterialType::Emerald));
+        scene.push_back(sfera);
+    }
+ 
     imgui.Initilize_IMGUI();
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
 
         //imgui
         imgui.my_interface();
@@ -233,25 +254,11 @@ int main()
         lightingShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
         lightingShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
 
-        // material properties
-        lightingShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-        lightingShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-        lightingShader.setFloat("material.shininess", 32.0f);
-
         // view/projection transformations
         projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
-
-        // world transformation
-        glm::mat4 model = glm::mat4(1.0f);
-        lightingShader.setMat4("model", model);
-
-        // render the cube
-        //glBindVertexArray(cubeVAO);
-        //glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
         //draw the lamp object
@@ -259,33 +266,52 @@ int main()
         lightCubeShader.setMat4("projection", projection);
         lightCubeShader.setMat4("view", view);
 
-        glBindVertexArray(lightCubeVAO);
+        
         for (unsigned int i = 0; i < 2; i++) {
-            model = glm::mat4(1.0f);
+            glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, pointLightPositions[i]);
             model = glm::scale(model, glm::vec3(0.2f));
             lightCubeShader.setMat4("model", model);
-
+            glBindVertexArray(lightCubeVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
-        //cubo.draw(lightingShader);
-       
+
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        if (deltaTime > 0.016f) {
+            lastFrame = currentFrame;
+            for (int i = 1; i < NR_PLANETS; i++) {
+                float angle = i * 0.2f; // Angolo in gradi
+                float radians = glm::radians(angle);          // Converti in radianti
+
+                // Calcolare la nuova posizione sulla traiettoria orbitale
+                float x = scene[i].positions.x * cos(radians)- scene[i].positions.z * sin(radians); // Posizione x
+                float z = scene[i].positions.x * sin(radians) + scene[i].positions.z * cos(radians); // Posizione z
+
+                // La coordinata y rimane costante, quindi possiamo mantenerla a 0
+                scene[i].Model = glm::mat4(1.0f); // Reset della matrice Model
+                scene[i].Model = translate(scene[i].Model, glm::vec3(x, scene[i].positions.y, z)); // Traslazione
+                scene[i].positions = vec3(x, scene[i].positions.y, z);
+
+                // Applicare la scala del pianeta
+                scene[i].Model = scale(scene[i].Model, scaleValue[i]);
+            }
+        }
+
+        //sfera.setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
+        for(int i =0; i<NR_PLANETS; i++)
+            scene[i].draw(lightingShader);
 
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        sfera.setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
-        sfera.draw(lightingShader);
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     //de-allocate all resources
-    glDeleteVertexArrays(1, &cubeVAO);
     glDeleteVertexArrays(1, &lightCubeVAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &lightCubeVBO);
 
     imgui.close_GUI();
 

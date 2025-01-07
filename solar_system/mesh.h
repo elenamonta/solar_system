@@ -34,6 +34,7 @@ public:
 	vec4 ancora_obj;
 	vec4 ancora_world;
 	GLuint textureID;
+	vec3 positions;
 
 	Mesh(meshType type, string meshName) {
 		switch (type) {
@@ -52,11 +53,11 @@ public:
 	}
 
 	void setMaterial(Material newMaterial) {
-		this->material = newMaterial;
+		material = newMaterial;
 	}
 
 	void setTexture(GLuint id) {
-		this->textureID = id; 
+		textureID = id;
 	}
 
 	void draw(Shader& shader) {
@@ -70,10 +71,9 @@ public:
 		ancora_world = ancora_obj; 
 		ancora_world = Model * ancora_obj;
 
-		/*glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		shader.setInt("texture_diffuse", 0);*/
-
+		
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, (indices.size() - 1) * sizeof(GLuint), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

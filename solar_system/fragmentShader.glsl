@@ -43,6 +43,7 @@ void main()
     }
     
     vec4 textureColor = texture(texture_diffuse, TexCoords); 
-    //FragColor = mix(vec4(result, 1.0), texture(texture_diffuse, TexCoords), 1.0)
-    FragColor = vec4(result, 1.0) * textureColor; 
+    FragColor = textureColor; 
+    //mix(vec4(result, 1.0), texture(texture_diffuse, TexCoords), 1.0);
+    //FragColor = vec4(result, 1.0) * textureColor; 
 }
