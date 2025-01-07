@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="File di origine">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="File di intestazione">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="File di risorse">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="File di intestazione\imgui">
+      <UniqueIdentifier>{662b9a0d-09b6-4719-b304-c7888ae3957e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File di origine\imgui">
+      <UniqueIdentifier>{b75bfb9b-cc1a-46e9-8267-c1b366f2d4ec}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>File di origine</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
+      <Filter>File di risorse</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_demo.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_draw.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_glfw.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_opengl3.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_tables.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_widgets.cpp">
+      <Filter>File di origine\imgui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="camera.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="shader_maker.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imconfig.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_glfw.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_opengl3.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_opengl3_loader.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_internal.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_rectpack.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_textedit.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_truetype.h">
+      <Filter>File di intestazione\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="material.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
