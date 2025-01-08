@@ -24,6 +24,7 @@ uniform vec3 viewPos;
 uniform Material material;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform sampler2D texture_diffuse; 
+uniform float mixFactor; 
 
 void main()
 {
@@ -43,7 +44,9 @@ void main()
     }
     
     vec4 textureColor = texture(texture_diffuse, TexCoords); 
-    FragColor = textureColor; 
-    //mix(vec4(result, 1.0), texture(texture_diffuse, TexCoords), 1.0);
+    //FragColor = textureColor; 
+    //FragColor = mix(vec4(result, 1.0), texture(texture_diffuse, TexCoords), mixFactor);
+    
+    FragColor = mix(vec4(material.diffuse, 1.0), texture(texture_diffuse, TexCoords), mixFactor);
     //FragColor = vec4(result, 1.0) * textureColor; 
 }

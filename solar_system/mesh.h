@@ -17,7 +17,8 @@ using namespace std;
 
 enum meshType {
 	cubo, 
-	sfera
+	sfera,
+	obj
 };
 
 class Mesh {
@@ -37,6 +38,13 @@ public:
 	vec3 positions;
 	float angle; 
 
+	/*Mesh()
+	{
+		material = Material();
+		textureID = 0;
+		INIT_VAO();
+	}*/
+
 	Mesh(meshType type, string meshName) {
 		switch (type) {
 		case cubo:
@@ -49,6 +57,8 @@ public:
 			break;
 		}
 		name = meshName;
+		material = Material(); 
+		textureID = 0; 
 
 		INIT_VAO();
 	}
@@ -61,26 +71,36 @@ public:
 		textureID = id;
 	}
 
-	void draw(Shader& shader) {
+	void draw(Shader& shader, float mixFactor) {
 		shader.use();
-		shader.setMat4("model", Model);
-		shader.setVec3("material.ambient", this->material.ambient);
-		shader.setVec3("material.diffuse", this->material.diffuse);
-		shader.setVec3("material.specular", this->material.specular);
-		shader.setFloat("material.shininess", this->material.shininess);
+		shader.setMat4("model", Model); 		
+		shader.setVec3("material.ambient", material.ambient);
+		shader.setVec3("material.diffuse", material.diffuse);
+		shader.setVec3("material.specular", material.specular);
+		shader.setFloat("material.shininess", material.shininess);
+		shader.setFloat("mixFactor", mixFactor);
+		shader.setInt("texture_diffuse", 0);
 
 		ancora_world = ancora_obj; 
 		ancora_world = Model * ancora_obj;
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
+
+		/*if(textureID > 0)
+		{ 
+			
+		}
+		else
+		{
+			shader.setInt("texture_diffuse", 0);
+		}*/
 		
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, (indices.size() - 1) * sizeof(GLuint), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 
-private:
 	void INIT_VAO() {
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
@@ -114,6 +134,8 @@ private:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
 	}
+
+private:
 
 	void crea_cubo() {
 		texCoords = {

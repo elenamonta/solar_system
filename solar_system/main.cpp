@@ -10,6 +10,7 @@
 #include "mesh.h"
 #include "material.h"
 #include "texture.h"
+#include "Model.h"
 #include <random>
 #include <iostream>
 
@@ -47,6 +48,7 @@ bool Clockwise = true; //senso orario
 
 vector<string> planetNames;
 vector<Mesh> scene;
+vector<Model> sceneObj; 
 int selected_obj = -1;
 
 glm::mat4 projection;
@@ -56,6 +58,8 @@ glm::mat4 view;
 string imageDir = "Texture/";
 vector<string> pathTexture; 
 vector<int> texture; 
+
+string modelDir = "Model/";
 
 int main()
 {
@@ -121,8 +125,7 @@ int main()
     Shader lightCubeShader("vertexShader.glsl", "fragmentShader_light.glsl");
     
     lightingShader.use(); 
-    lightingShader.setInt("texture_diffuse", 0);
-
+    
     // lamp_object
     //__________________________________________
     
@@ -226,11 +229,25 @@ int main()
         sfera.angle = 0.0f; 
         sfera.Model = scale(sfera.Model, scaleValue[i]);
         sfera.setTexture(texture[i]);
-
         //sfera.setMaterial(Material::getMaterial(MaterialType::Emerald));
         scene.push_back(sfera);
     }
  
+
+    //mesh obj
+    auto path = modelDir + "ufo.obj";
+    Model ufo(path.c_str());
+    for (int i = 0; i < ufo.Model3D.size(); i++) {
+        ufo.Model3D[i].INIT_VAO();
+        ufo.Model3D[i].Model = mat4(1.0f);
+        ufo.Model3D[i].Model = translate(ufo.Model3D[i].Model, vec3(0.0f, 3.0f, 0.0f));
+        ufo.Model3D[i].Model = scale(ufo.Model3D[i].Model, vec3(0.5f, 0.5f, 0.5f));
+        ufo.Model3D[i].name = "ufo";
+        ufo.Model3D[i].ancora_obj = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+    sceneObj.push_back(ufo);
+
+
     imgui.Initilize_IMGUI();
 
 
@@ -310,8 +327,11 @@ int main()
         //sfera.setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
         
         // draw meshes
-        for(int i =0; i<NR_PLANETS; i++)
-            scene[i].draw(lightingShader);
+        for(int i = 0; i < NR_PLANETS; i++)
+            scene[i].draw(lightingShader, 1.0f);
+
+        for (int i = 0; i < sceneObj.size(); i++)
+            sceneObj[i].draw(lightingShader);
 
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

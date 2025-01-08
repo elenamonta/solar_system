@@ -173,6 +173,7 @@
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="shader_maker.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="texture.h" />

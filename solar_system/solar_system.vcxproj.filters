@@ -101,5 +101,8 @@
     <ClInclude Include="stb_image.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
