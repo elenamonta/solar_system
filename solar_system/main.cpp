@@ -124,7 +124,6 @@ int main()
     Shader lightingShader("vertexShader.glsl", "fragmentShader.glsl");
     Shader lightCubeShader("vertexShader.glsl", "fragmentShader_light.glsl");
     
-    lightingShader.use(); 
     
     // lamp_object
     //__________________________________________
@@ -175,8 +174,8 @@ int main()
 
 
     glm::vec3 pointLightPositions[] = {
-        glm::vec3(0.7f,  0.2f,  10.0f),
-        glm::vec3(0.0f, 0.0f, -7.0f)
+        glm::vec3(0.7f,  0.2f,  5.0f),
+        glm::vec3(-6.0f, 2.0f, 0.0f)
     };
 
     
@@ -211,41 +210,25 @@ int main()
 
     };
 
-    Mesh sfera(meshType::sfera, planetNames[0]);
-    sfera.Model = mat4(1.0);
-    sfera.Model = translate(sfera.Model, vec3(0.0, 0.0, 0.0));
-    sfera.positions = vec3(0.0, 0.0, 0.0);
-    sfera.Model = scale(sfera.Model, vec3(1.0, 1.0, 1.0));
-    sfera.angle = 0.0f; 
-    sfera.setTexture(texture[0]);
+    Mesh sfera(meshType::sfera, planetNames[0], vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
+    sfera.setMaterial(Material::getMaterial(MaterialType::RedPlastic));
     scene.push_back(sfera);
  
     
     for (int i = 1; i < NR_PLANETS; i++) {
-        Mesh sfera(meshType::sfera, planetNames[i]);
-        sfera.Model = mat4(1.0);
-        sfera.Model = translate(sfera.Model, vec3(i*2.0, 0.0, 0.0));
-        sfera.positions = vec3(i * 2.0, 0.0, 0.0);
-        sfera.angle = 0.0f; 
-        sfera.Model = scale(sfera.Model, scaleValue[i]);
+        Mesh sfera(meshType::sfera, planetNames[i], vec3(i * 2.0, 0.0, 0.0), scaleValue[i], vec3(1.0f, 0.0f, 0.0f), 0.0f);
         sfera.setTexture(texture[i]);
-        //sfera.setMaterial(Material::getMaterial(MaterialType::Emerald));
         scene.push_back(sfera);
     }
  
 
     //mesh obj
     auto path = modelDir + "ufo.obj";
-    Model ufo(path.c_str());
-    for (int i = 0; i < ufo.Model3D.size(); i++) {
-        ufo.Model3D[i].INIT_VAO();
-        ufo.Model3D[i].Model = mat4(1.0f);
-        ufo.Model3D[i].Model = translate(ufo.Model3D[i].Model, vec3(0.0f, 3.0f, 0.0f));
-        ufo.Model3D[i].Model = scale(ufo.Model3D[i].Model, vec3(0.5f, 0.5f, 0.5f));
-        ufo.Model3D[i].name = "ufo";
-        ufo.Model3D[i].ancora_obj = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+    Model ufo(path.c_str(), vec3(2.0f, 2.5f, 7.0f), vec3(0.5f, 0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
+    Model spaceship((modelDir + "Low Poly Spaceship.obj").c_str(), vec3(-2.0, 3.0, 2.0), vec3(1.0f, 1.0f, 1.0f), vec3(0.0, 1.0, 0.0), 35.f);
+
     sceneObj.push_back(ufo);
+    sceneObj.push_back(spaceship);
 
 
     imgui.Initilize_IMGUI();
@@ -258,6 +241,7 @@ int main()
 
         //imgui
         imgui.my_interface();
+        imgui.set_selected_id(selected_obj);
 
         // input
         processInput(window);
@@ -309,7 +293,7 @@ int main()
             lastFrame = currentFrame;
             for (int i = 0; i < NR_PLANETS; i++) {
                 float angle = i * 0.2f; 
-                float radians = glm::radians(angle);          
+                float radians = glm::radians(angle);     
                 float x = scene[i].positions.x * cos(radians)- scene[i].positions.z * sin(radians); 
                 float z = scene[i].positions.x * sin(radians) + scene[i].positions.z * cos(radians); 
                 
@@ -324,14 +308,18 @@ int main()
 
 
         // set material from gui
-        //sfera.setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
+        scene[0].setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
         
         // draw meshes
-        for(int i = 0; i < NR_PLANETS; i++)
+        scene[0].setShader(static_cast<shaderOpt>(imgui.selectedShader));
+        scene[0].draw(lightingShader, 0.0f);
+
+        for(int i = 1; i < NR_PLANETS; i++)
             scene[i].draw(lightingShader, 1.0f);
 
-        for (int i = 0; i < sceneObj.size(); i++)
-            sceneObj[i].draw(lightingShader);
+        for (int i = 0; i < sceneObj.size(); i++) 
+            sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader));
+        
 
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -521,8 +509,11 @@ void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods)
                     }
                 }
             }
-            if (selected_obj > -1)
+            if (selected_obj > -1){
                 cout << "Oggetto selezionato " << scene[selected_obj].name.c_str() << endl;
+            }
+
+
         }
 
     default:

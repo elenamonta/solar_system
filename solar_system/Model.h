@@ -16,16 +16,29 @@
 class Model {
 public:
 	vector<Mesh> Model3D;
+	vec3 positionVec; 
+	vec3 scaleVec; 
+	vec3 rotationVec; 
+	float angle; 
 
-	Model(const char* path)
+	Model(const char* path, vec3 pos, vec3 scale, vec3 rotation, float angleDegree)
 	{
+		positionVec = pos; 
+		scaleVec = scale; 
+		rotationVec = rotation; 
+		angle = angleDegree;
 		bool obj = loadAssImp(path);
 		normalizeModel();
+		for (int i = 0; i < Model3D.size(); i++) {
+			Model3D[i].INIT_VAO();
+		}
+		//clear_objModel();
 	}
 
-	void draw(Shader& shader)
+	void draw(Shader& shader, shaderOpt shaderType)
 	{
 		for (int i = 0; i < Model3D.size(); i++) {
+			Model3D[i].setShader(shaderType); 
 			Model3D[i].draw(shader, 0.0f);
 		}
 	}
@@ -58,11 +71,10 @@ private:
 
 		// Fill vertices positions
 		int num_meshes = scene->mNumMeshes;  //Numero di oggetti che compongono il modello
-		//Model3D.resize(num_meshes); 
-		Model3D.reserve(num_meshes); // Riserva lo spazio necessario, per efficienza
-
+		
 		for (int i = 0; i < num_meshes; ++i) {
-			Model3D.emplace_back(obj, "ufo");
+			Mesh tmp(obj, "obj", positionVec, scaleVec, rotationVec, angle);
+			Model3D.push_back(tmp);
 		}
 
 		for (unsigned int nm = 0; nm < num_meshes; nm++)
@@ -78,8 +90,6 @@ private:
 			if (aiReturn_SUCCESS == material->Get(AI_MATKEY_COLOR_AMBIENT, color))
 			{
 				Model3D[nm].material.ambient = glm::vec3(color.r, color.g, color.b);
-				cout << Model3D[nm].material.ambient.x << " ," << Model3D[nm].material.ambient.y << " ," << Model3D[nm].material.ambient.z << endl;
-
 			}
 			else
 			{
@@ -90,6 +100,7 @@ private:
 			{
 
 				Model3D[nm].material.diffuse = glm::vec3(color.r, color.g, color.b);
+				//cout << Model3D[nm].material.diffuse.x << " ," << Model3D[nm].material.diffuse.y << " ," << Model3D[nm].material.diffuse.z << endl;
 			}
 			else
 			{

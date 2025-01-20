@@ -21,6 +21,11 @@ enum meshType {
 	obj
 };
 
+enum shaderOpt {
+	Phong,
+	BlinnPhong
+};
+
 class Mesh {
 public: 
 	vector<vec3> vertices;
@@ -36,31 +41,35 @@ public:
 	vec4 ancora_world;
 	GLuint textureID;
 	vec3 positions;
+	int sceltaShader; 
 	float angle; 
 
-	/*Mesh()
+	Mesh(meshType type, string meshName, vec3 positionVec, vec3 scaleVec, vec3 rotationVec, float angleDegree)
 	{
-		material = Material();
-		textureID = 0;
-		INIT_VAO();
-	}*/
-
-	Mesh(meshType type, string meshName) {
 		switch (type) {
 		case cubo:
-			crea_cubo(); 
+			crea_cubo();
 			break;
 		case sfera:
-			crea_sfera(); 
+			crea_sfera();
 			break;
 		default:
 			break;
 		}
-		name = meshName;
-		material = Material(); 
-		textureID = 0; 
 
+		name = meshName;
+		material = Material();
+		textureID = 0;
+		ancora_obj = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		INIT_VAO();
+
+		Model = mat4(1.0f);
+		Model = translate(Model, positionVec);
+		positions = positionVec; 
+		Model = scale(Model, scaleVec);
+		angle = angleDegree; 
+		Model = rotate(Model, radians(angle), rotationVec);
+		sceltaShader = shaderOpt::BlinnPhong;
 	}
 
 	void setMaterial(Material newMaterial) {
@@ -71,6 +80,11 @@ public:
 		textureID = id;
 	}
 
+	void setShader(shaderOpt shader){
+		sceltaShader = shader;
+	}
+
+
 	void draw(Shader& shader, float mixFactor) {
 		shader.use();
 		shader.setMat4("model", Model); 		
@@ -80,21 +94,13 @@ public:
 		shader.setFloat("material.shininess", material.shininess);
 		shader.setFloat("mixFactor", mixFactor);
 		shader.setInt("texture_diffuse", 0);
+		shader.setInt("sceltaShader", sceltaShader);
 
 		ancora_world = ancora_obj; 
 		ancora_world = Model * ancora_obj;
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
-
-		/*if(textureID > 0)
-		{ 
-			
-		}
-		else
-		{
-			shader.setInt("texture_diffuse", 0);
-		}*/
 		
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, (indices.size() - 1) * sizeof(GLuint), GL_UNSIGNED_INT, 0);

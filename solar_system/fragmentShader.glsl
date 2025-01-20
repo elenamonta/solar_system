@@ -25,6 +25,7 @@ uniform Material material;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform sampler2D texture_diffuse; 
 uniform float mixFactor; 
+uniform int sceltaShader; 
 
 void main()
 {
@@ -36,17 +37,26 @@ void main()
         vec3 lightDir = normalize(pointLights[i].position - FragPos);
         float diff = max(dot(norm, lightDir), 0.0);
         vec3 diffuse = pointLights[i].diffuse * (diff * material.diffuse);
+        
         vec3 viewDir = normalize(viewPos - FragPos);
-        vec3 reflectDir = reflect(-lightDir, norm);  
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+        float spec;
+
+        if(sceltaShader==0)
+        {
+            vec3 reflectDir = reflect(-lightDir, norm);  
+            spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+        }else
+        {
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            spec = pow(max(dot(norm, halfwayDir), 0.0), material.shininess);
+        }
         vec3 specular = pointLights[i].specular * (spec * material.specular);  
         result += ambient + diffuse + specular;
     }
     
     vec4 textureColor = texture(texture_diffuse, TexCoords); 
     //FragColor = textureColor; 
-    //FragColor = mix(vec4(result, 1.0), texture(texture_diffuse, TexCoords), mixFactor);
+    //FragColor = vec4(result, 1.0);
+    FragColor = mix(vec4(result, 1.0), texture(texture_diffuse, TexCoords), mixFactor);
     
-    FragColor = mix(vec4(material.diffuse, 1.0), texture(texture_diffuse, TexCoords), mixFactor);
-    //FragColor = vec4(result, 1.0) * textureColor; 
 }
