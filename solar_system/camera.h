@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
     FORWARD,
@@ -50,6 +51,14 @@ public:
         Phi = phi;
     }
 
+    bool setTrackballMode(bool active) {
+        if (active != this->trackballMode) {
+            this->trackballMode = active;
+            return true;
+        }
+        return false;
+    }
+
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix()
     {
@@ -63,11 +72,17 @@ public:
         if (direction == FORWARD) {
             Direction = Target - Position;
             Position += Direction * velocity;
+            if (trackballMode) {
+                Direction = glm::normalize(-Position);
+            }
             Target = Position + Direction;
         }
         if (direction == BACKWARD) {
             Direction = Target - Position;
             Position -= Direction * velocity;
+            if (trackballMode) {
+                Direction = glm::normalize(-Position);
+            }
             Target = Position + Direction;
         }
         if (!trackballMode)
@@ -88,12 +103,16 @@ public:
         else
         {
             if (direction == LEFT) {
-                Direction = Position - Target;
-                Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(Direction, 0.0f));
+                glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); // Ruota la posizione
+                Direction = glm::normalize(-Position); // Aggiorna la direzione verso il centro
+                Target = glm::vec3(0.0f, 0.0f, 0.0f); // Assicura che il target sia il centro
             }
             if (direction == RIGHT) {
-                Direction = Position - Target;
-                Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(Direction, 0.0f));
+                glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); // Ruota la posizione
+                Direction = glm::normalize(-Position); // Aggiorna la direzione verso il centro
+                Target = glm::vec3(0.0f, 0.0f, 0.0f); // Assicura che il target sia il centro
             }
         }
                
@@ -137,7 +156,7 @@ public:
             Zoom = 45.0f;
     }
 
-    void RotateAround(float width, float height, float xpos, float ypos, float last_mouse_pos_x, float last_mouse_pos_y, bool rotateDirection)
+    void RotateAround(float width, float height, float xpos, float ypos, float last_mouse_pos_x, float last_mouse_pos_y)
     {
         float velocity = 100.0f; 
         glm::vec3 destination = getTrackBallPoint(xpos, ypos, width, height);
@@ -161,12 +180,11 @@ public:
 
             Direction = Position - Target;
 
-            if (rotateDirection) {
-                Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(-angle), rotationAxis) * glm::vec4(Direction, 0.0f));
-            }
-            else {
-                Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(angle), rotationAxis) * glm::vec4(Direction, 0.0f));
-            }
+            
+            Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(-angle), rotationAxis) * glm::vec4(Direction, 0.0f));
+           
+            Target = glm::vec3(0.0f, 0.0f, 0.0f);
+            Direction = glm::normalize(Target - Position);
         }
     }
 

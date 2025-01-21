@@ -35,15 +35,12 @@ Camera camera(glm::vec3(0.0f, 4.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+bool trackBall = false, lastTrackball = false;
 
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-//input
-bool trackballMode = false;
-bool previousTrackballMode = trackballMode;
-bool Clockwise = true; //senso orario
 
 
 vector<string> planetNames;
@@ -56,7 +53,8 @@ glm::mat4 view;
 
 //gestione texture
 string imageDir = "Texture/";
-vector<string> pathTexture; 
+string SkyboxDir = "SkyBoxes/";
+vector<string> pathTexture;
 vector<int> texture; 
 
 string modelDir = "Model/";
@@ -100,7 +98,27 @@ int main()
         return -1;
     }
 
+    //load cubemap texture
+    vector<std::string> faces
+    {
+        /*"right.jpg",
+        "left.jpg",
+        "top.jpg",
+        "bottom.jpg",
+        "front.jpg",
+        "back.jpg"*/
+        SkyboxDir + "posx.jpg",
+        SkyboxDir + "negx.jpg",
+        SkyboxDir + "posy.jpg",
+        SkyboxDir + "negy.jpg",
+        SkyboxDir + "posz.jpg",
+        SkyboxDir + "negz.jpg"
 
+    };
+    unsigned int cubemapTexture = Texture().loadCubemap(faces, 0);
+
+
+    //load mesh texture 
     pathTexture.push_back(imageDir + "2k_sun.jpg");
     pathTexture.push_back(imageDir + "2k_mercury.jpg");
     pathTexture.push_back(imageDir + "2k_venus.jpg");
@@ -116,85 +134,18 @@ int main()
     }
 
     // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile our shader zprogram
-    // ------------------------------------
+    // build and compile shader program
     Shader lightingShader("vertexShader.glsl", "fragmentShader.glsl");
-    Shader lightCubeShader("vertexShader.glsl", "fragmentShader_light.glsl");
+    Shader skyboxShader("vertexShader_CubeMap.glsl", "fragmentShader_CubeMap.glsl");
     
-    
-    // lamp_object
-    //__________________________________________
-    
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f
-    };
+   
+    // build the skybox as if it were a mesh
+    Mesh sky(meshType::cubo, "", vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
 
 
-    glm::vec3 pointLightPositions[] = {
-        glm::vec3(0.7f,  0.2f,  5.0f),
-        glm::vec3(-6.0f, 2.0f, 0.0f)
-    };
-
-    
-    // Configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-    unsigned int lightCubeVAO, lightCubeVBO;
-    glGenVertexArrays(1, &lightCubeVAO);
-    glGenBuffers(1, &lightCubeVBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, lightCubeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(lightCubeVAO);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-        
-    //_________________________________________________
-
-
+    // build all planets
     planetNames = { "Sole", "Mercurio", "Venere", "Terra", "Marte", "Giove", "Saturno", "Urano", "Nettuno" };
 
     vector<vec3> scaleValue = {
@@ -210,19 +161,20 @@ int main()
 
     };
 
+    // costruisco il sole come UNICO oggetto personalizzabile all'interno del sistema
     Mesh sfera(meshType::sfera, planetNames[0], vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
     sfera.setMaterial(Material::getMaterial(MaterialType::RedPlastic));
     scene.push_back(sfera);
- 
     
+    // next build the other planets with a texture
     for (int i = 1; i < NR_PLANETS; i++) {
         Mesh sfera(meshType::sfera, planetNames[i], vec3(i * 2.0, 0.0, 0.0), scaleValue[i], vec3(1.0f, 0.0f, 0.0f), 0.0f);
         sfera.setTexture(texture[i]);
         scene.push_back(sfera);
     }
- 
+    
 
-    //mesh obj
+    // buil mesh obj and push in sceneObj vector
     auto path = modelDir + "ufo.obj";
     Model ufo(path.c_str(), vec3(2.0f, 2.5f, 7.0f), vec3(0.5f, 0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
     Model spaceship((modelDir + "Low Poly Spaceship.obj").c_str(), vec3(-2.0, 3.0, 2.0), vec3(1.0f, 1.0f, 1.0f), vec3(0.0, 1.0, 0.0), 35.f);
@@ -231,11 +183,11 @@ int main()
     sceneObj.push_back(spaceship);
 
 
+
     imgui.Initilize_IMGUI();
 
 
     // render loop
-    // -----------
     while (!glfwWindowShouldClose(window))
     {
 
@@ -253,12 +205,12 @@ int main()
         lightingShader.use();
         lightingShader.setVec3("viewPos", camera.Position);
 
-        lightingShader.setVec3("pointLights[0].position", pointLightPositions[0]);
+        lightingShader.setVec3("pointLights[0].position", imgui.lightPosition1);
         lightingShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
         lightingShader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
         lightingShader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
 
-        lightingShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+        lightingShader.setVec3("pointLights[1].position", imgui.lightPosition2);
         lightingShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
         lightingShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
         lightingShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
@@ -269,21 +221,16 @@ int main()
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
 
-
-        //draw the lamp object
-        lightCubeShader.use();
-        lightCubeShader.setMat4("projection", projection);
-        lightCubeShader.setMat4("view", view);
-
-        
-        for (unsigned int i = 0; i < 2; i++) {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, pointLightPositions[i]);
-            model = glm::scale(model, glm::vec3(0.2f));
-            lightCubeShader.setMat4("model", model);
-            glBindVertexArray(lightCubeVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        //Skybox
+        glDepthMask(GL_FALSE);
+        skyboxShader.use(); 
+        skyboxShader.setMat4("projection", projection); 
+        skyboxShader.setMat4("view", view);
+        glBindVertexArray(sky.VAO);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawElements(GL_TRIANGLES, sky.indices.size() * sizeof(GLuint), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+        glDepthMask(GL_TRUE);
 
 
         //orbital movement
@@ -292,15 +239,15 @@ int main()
         if (deltaTime > 0.016f) {
             lastFrame = currentFrame;
             for (int i = 0; i < NR_PLANETS; i++) {
-                float angle = i * 0.2f; 
-                float radians = glm::radians(angle);     
-                float x = scene[i].positions.x * cos(radians)- scene[i].positions.z * sin(radians); 
-                float z = scene[i].positions.x * sin(radians) + scene[i].positions.z * cos(radians); 
-                
-                scene[i].Model = glm::mat4(1.0f); 
+                float angle = i * 0.2f;
+                float radians = glm::radians(angle);
+                float x = scene[i].positions.x * cos(radians) - scene[i].positions.z * sin(radians);
+                float z = scene[i].positions.x * sin(radians) + scene[i].positions.z * cos(radians);
+
+                scene[i].Model = glm::mat4(1.0f);
                 scene[i].Model = translate(scene[i].Model, glm::vec3(x, scene[i].positions.y, z));
                 scene[i].positions = vec3(x, scene[i].positions.y, z);
-                scene[i].angle += angle; 
+                scene[i].angle += angle;
                 scene[i].Model = glm::rotate(scene[i].Model, glm::radians(scene[i].angle), glm::vec3(0.0f, 1.0f, 0.0f));
                 scene[i].Model = scale(scene[i].Model, scaleValue[i]);
             }
@@ -310,7 +257,7 @@ int main()
         // set material from gui
         scene[0].setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
         
-        // draw meshes
+        // draw all meshes
         scene[0].setShader(static_cast<shaderOpt>(imgui.selectedShader));
         scene[0].draw(lightingShader, 0.0f);
 
@@ -319,17 +266,22 @@ int main()
 
         for (int i = 0; i < sceneObj.size(); i++) 
             sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader));
-        
 
+        camera.setTrackballMode(imgui.get_trackball_mode());
+        trackBall = imgui.get_trackball_mode();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    //de-allocate all resources
-    glDeleteVertexArrays(1, &lightCubeVAO);
-    glDeleteBuffers(1, &lightCubeVBO);
+    // de-allocate all resources
+    for (int i = 0; i < scene.size(); i++) 
+        scene[i].DESTROY_VAO();
+    
+    for (int i = 0; i < sceneObj.size(); i++)
+        sceneObj[i].clear_objModel();
+
 
     imgui.close_GUI();
 
@@ -357,8 +309,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-
-
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
     float xpos = static_cast<float>(xposIn);
@@ -373,28 +323,26 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos;
 
-    if (!previousTrackballMode && trackballMode) {
-        camera.resetPosition(glm::vec3(0.0, 0.0, 3.0));
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
+        return; 
     }
-    else if (previousTrackballMode && !trackballMode) {
+
+    if (trackBall != lastTrackball) {
         camera.resetPosition(glm::vec3(0.0, 0.0, 3.0));
     }
 
-    camera.trackballMode = trackballMode;
-
-    if (trackballMode) {
-        camera.RotateAround(SCR_WIDTH, SCR_HEIGHT, xpos, ypos, lastX, lastY, Clockwise);
+    if (trackBall) {
+        camera.RotateAround(SCR_WIDTH, SCR_HEIGHT, xpos, ypos, lastX, lastY);
     }
     else {
         camera.ProcessMouseMovement(xoffset, yoffset);
     }
 
-    previousTrackballMode = trackballMode;
+    lastTrackball = trackBall;
     lastX = xpos;
     lastY = ypos;
 
 }
-
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
@@ -402,6 +350,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 
+//funzioni per la gestione le interazioni con le mesh 
 vec3 get_ray_from_mouse(float mouse_x, float mouse_y) {
     //La funzione get_ray_from_mouse calcola il raggio che parte dalla posizione della telecamera
     //  e passa attraverso il punto sullo schermo corrispondente alla posizione del mouse.
@@ -436,10 +385,6 @@ vec3 get_ray_from_mouse(float mouse_x, float mouse_y) {
 
     return ray_wor;
 }
-
-/*controlla se un raggio interseca una sfera. In caso negativo, restituisce false. Rigetta
-le intersezioni dietro l'origine del raggio, e pone  intersection_distance all'intersezione p iù vicina.
-*/
 
 bool ray_sphere(vec3 O, vec3 d, vec3 sphere_centre_wor, float sphere_radius, float* intersection_distance) {
 
@@ -509,11 +454,9 @@ void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods)
                     }
                 }
             }
-            if (selected_obj > -1){
+            /*if (selected_obj > -1){
                 cout << "Oggetto selezionato " << scene[selected_obj].name.c_str() << endl;
-            }
-
-
+            }*/
         }
 
     default:

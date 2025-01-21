@@ -7,8 +7,6 @@
 #include "mesh.h"
 
 using namespace ImGui;
-extern bool trackballMode;
-extern bool Clockwise;
 extern vector<Mesh> scene; 
 
 class Gui {
@@ -16,6 +14,8 @@ class Gui {
 
 		int selectedMaterialType = 0;
 		int selectedShader = 0; 
+		vec3 lightPosition1 = vec3(0.7f, 0.2f, 5.0f);
+		vec3 lightPosition2 = vec3(-6.0f, 2.0f, 0.0f);
 
 		Gui(GLFWwindow* window){
 			Window = window;
@@ -36,6 +36,10 @@ class Gui {
 			this->selected_id = selected;
 		}
 
+		bool get_trackball_mode() {
+			return this->trackballMode;
+		}
+
 		void my_interface() {
 			ImGui_ImplGlfw_NewFrame();
 			ImGui_ImplOpenGL3_NewFrame(); // Inizia un nuovo frame per ImGui
@@ -48,6 +52,18 @@ class Gui {
 				ImGuiWindowFlags_NoTitleBar |
 				ImGuiWindowFlags_NoMove
 			);
+
+			if (ImGui::CollapsingHeader("Modica posizione di Light1")) {
+				ImGui::SliderFloat("Light1 position x", &lightPosition1.x, -50.0f, 50.0f);
+				ImGui::SliderFloat("Light1 position y", &lightPosition1.y, -50.0f, 50.0f);
+				ImGui::SliderFloat("Light1 position z", &lightPosition1.z, -50.0f, 50.0f);
+			}
+
+			if (ImGui::CollapsingHeader("Modica posizione di Light2")) {
+				ImGui::SliderFloat("Light2 position x", &lightPosition2.x, -50.0f, 50.0f);
+				ImGui::SliderFloat("Light2 position y", &lightPosition2.y, -50.0f, 50.0f);
+				ImGui::SliderFloat("Light2 position z", &lightPosition2.z, -50.0f, 50.0f);
+			}
 
 			if (selected_id > -1) {
 				string toPrint = "Oggetto selezionato ";
@@ -71,9 +87,6 @@ class Gui {
 			SetWindowSize(ImVec2(300, 100));
 			
 			Checkbox("Navigazione trackball", &trackballMode);
-			if(trackballMode){
-				Checkbox("Navigazione in senso orario", &Clockwise);
-			}
 
 			End();
 
@@ -90,5 +103,6 @@ class Gui {
 
 private:
 	GLFWwindow* Window;
+	bool trackballMode;
 	int selected_id = -1;
 };

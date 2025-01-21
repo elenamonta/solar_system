@@ -141,6 +141,21 @@ public:
 
 	}
 
+	void DESTROY_VAO() {
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		glDisableVertexAttribArray(2);
+		glDisableVertexAttribArray(3);
+
+		glDeleteBuffers(1, &VBO_vertices);
+		glDeleteBuffers(1, &VBO_colors);
+		glDeleteBuffers(1, &VBO_normals);
+		glDeleteBuffers(1, &VBO_texCoords);
+		glDeleteBuffers(1, &EBO_indices);
+
+		glDeleteVertexArrays(1, &VAO);
+	}
+
 private:
 
 	void crea_cubo() {
