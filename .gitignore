@@ -75,6 +75,10 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
+
+!solar_system\solar_system\Model\Low Poly Spaceship.obj
+!solar_system\solar_system\Model\ufo.obj
+
 *.iobj
 *.pch
 *.pdb
