@@ -4,9 +4,12 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "mesh.h"
+
+using namespace glm; 
+using namespace std; 
 
 
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
     FORWARD,
     BACKWARD,
@@ -22,7 +25,6 @@ const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
 
-// An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
 {
 public:
@@ -40,15 +42,14 @@ public:
     float Zoom;
     bool trackballMode; 
 
-    // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), float theta = THETA, float phi = PHI) : MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
         Position = position;
         Target = target;
         Direction = Target - Position;
         WorldUp = up;
-        Theta = theta;
-        Phi = phi;
+        Theta = theta; // controls rotation around the x-axis
+        Phi = phi; // controls rotation around the y-axis
     }
 
     bool setTrackballMode(bool active) {
@@ -65,7 +66,7 @@ public:
         return glm::lookAt(glm::vec3(Position), glm::vec3(Target), glm::vec3(WorldUp));
     }
 
-    // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+    // processes input received from any keyboard-like input system.
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
@@ -104,22 +105,22 @@ public:
         {
             if (direction == LEFT) {
                 glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); // Ruota la posizione
-                Direction = glm::normalize(-Position); // Aggiorna la direzione verso il centro
-                Target = glm::vec3(0.0f, 0.0f, 0.0f); // Assicura che il target sia il centro
+                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); 
+                Direction = glm::normalize(-Position);
+                Target = glm::vec3(0.0f, 0.0f, 0.0f);
             }
             if (direction == RIGHT) {
                 glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); // Ruota la posizione
-                Direction = glm::normalize(-Position); // Aggiorna la direzione verso il centro
-                Target = glm::vec3(0.0f, 0.0f, 0.0f); // Assicura che il target sia il centro
+                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); 
+                Direction = glm::normalize(-Position);
+                Target = glm::vec3(0.0f, 0.0f, 0.0f);
             }
         }
                
 
     }
 
-    // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
+    // processes input received from mouse input. When camera is on free mode
     void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
     {
         xoffset *= MouseSensitivity;
@@ -156,6 +157,7 @@ public:
             Zoom = 45.0f;
     }
 
+    // processes input received from mouse input. When camera is on trackball mode
     void RotateAround(float width, float height, float xpos, float ypos, float last_mouse_pos_x, float last_mouse_pos_y)
     {
         float velocity = 100.0f; 
@@ -180,7 +182,6 @@ public:
 
             Direction = Position - Target;
 
-            
             Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(-angle), rotationAxis) * glm::vec4(Direction, 0.0f));
            
             Target = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -217,4 +218,4 @@ private:
         return normalize(point);
     }
 };
-#endif#pragma once
+#endif

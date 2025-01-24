@@ -11,6 +11,7 @@
 #include "material.h"
 #include "texture.h"
 #include "Model.h"
+#include "utils.h"
 #include <random>
 #include <iostream>
 
@@ -41,8 +42,6 @@ bool trackBall = false, lastTrackball = false;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-
-
 vector<string> planetNames;
 vector<Mesh> scene;
 vector<Model> sceneObj; 
@@ -51,18 +50,18 @@ int selected_obj = -1;
 glm::mat4 projection;
 glm::mat4 view;
 
-//gestione texture
-string imageDir = "Texture/";
+string modelDir = "Model/";
 string SkyboxDir = "SkyBoxes/";
+string imageDir = "Texture/";
 vector<string> pathTexture;
 vector<int> texture; 
 
-string modelDir = "Model/";
+
+bool collisionDetect = false; 
 
 int main()
 {
     // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -73,7 +72,6 @@ int main()
 #endif
 
     // glfw window creation
-    // --------------------
     window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "", NULL, NULL);
     if (window == NULL)
     {
@@ -98,15 +96,9 @@ int main()
         return -1;
     }
 
-    //load cubemap texture
+    // load cubemap texture
     vector<std::string> faces
     {
-        /*"right.jpg",
-        "left.jpg",
-        "top.jpg",
-        "bottom.jpg",
-        "front.jpg",
-        "back.jpg"*/
         SkyboxDir + "posx.jpg",
         SkyboxDir + "negx.jpg",
         SkyboxDir + "posy.jpg",
@@ -118,7 +110,7 @@ int main()
     unsigned int cubemapTexture = Texture().loadCubemap(faces, 0);
 
 
-    //load mesh texture 
+    // load mesh texture 
     pathTexture.push_back(imageDir + "2k_sun.jpg");
     pathTexture.push_back(imageDir + "2k_mercury.jpg");
     pathTexture.push_back(imageDir + "2k_venus.jpg");
@@ -161,12 +153,12 @@ int main()
 
     };
 
-    // costruisco il sole come UNICO oggetto personalizzabile all'interno del sistema
+    // build the sun as the ONLY customizable object within the system
     Mesh sfera(meshType::sfera, planetNames[0], vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
     sfera.setMaterial(Material::getMaterial(MaterialType::RedPlastic));
     scene.push_back(sfera);
     
-    // next build the other planets with a texture
+    // then build the other planets with their own texture
     for (int i = 1; i < NR_PLANETS; i++) {
         Mesh sfera(meshType::sfera, planetNames[i], vec3(i * 2.0, 0.0, 0.0), scaleValue[i], vec3(1.0f, 0.0f, 0.0f), 0.0f);
         sfera.setTexture(texture[i]);
@@ -174,10 +166,9 @@ int main()
     }
     
 
-    // buil mesh obj and push in sceneObj vector
-    auto path = modelDir + "ufo.obj";
-    Model ufo(path.c_str(), vec3(2.0f, 2.5f, 7.0f), vec3(0.5f, 0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
-    Model spaceship((modelDir + "Low Poly Spaceship.obj").c_str(), vec3(-2.0, 3.0, 2.0), vec3(1.0f, 1.0f, 1.0f), vec3(0.0, 1.0, 0.0), 35.f);
+    // build meshes obj and push them in sceneObj vector
+    Model ufo((modelDir + "ufo.obj").c_str(), vec3(2.0f, 2.5f, 7.0f), vec3(0.2f, 0.2f, 0.2f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
+    Model spaceship((modelDir + "Low Poly Spaceship.obj").c_str(), vec3(-2.0, 3.0, 2.0), vec3(0.5f, 0.5f, 0.5f), vec3(0.0, 1.0, 0.0), 35.f);
 
     sceneObj.push_back(ufo);
     sceneObj.push_back(spaceship);
@@ -205,6 +196,7 @@ int main()
         lightingShader.use();
         lightingShader.setVec3("viewPos", camera.Position);
 
+        // set uniforms point lights
         lightingShader.setVec3("pointLights[0].position", imgui.lightPosition1);
         lightingShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
         lightingShader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
@@ -221,7 +213,7 @@ int main()
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
 
-        //Skybox
+        // Skybox uniform
         glDepthMask(GL_FALSE);
         skyboxShader.use(); 
         skyboxShader.setMat4("projection", projection); 
@@ -233,9 +225,10 @@ int main()
         glDepthMask(GL_TRUE);
 
 
-        //orbital movement
+        // orbital movement
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
+        // update frequency control
         if (deltaTime > 0.016f) {
             lastFrame = currentFrame;
             for (int i = 0; i < NR_PLANETS; i++) {
@@ -267,6 +260,30 @@ int main()
         for (int i = 0; i < sceneObj.size(); i++) 
             sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader));
 
+
+        // collision detections
+        for (int i = 0; i < scene.size(); i++) {
+            if (Utils().isColliding(camera.Position, scene[i])) {
+                collisionDetect = true; 
+                break;
+            }
+            else {
+                collisionDetect = false; 
+            }
+        }
+
+        for (int i = 0; i < sceneObj.size(); i++) {
+            if (Utils().isCollidingObj(camera.Position, sceneObj[i])) {
+                collisionDetect = true; 
+                break; 
+            }
+            else {
+                collisionDetect = false; 
+            }
+        }
+
+
+        // check gui trackball flag 
         camera.setTrackballMode(imgui.get_trackball_mode());
         trackBall = imgui.get_trackball_mode();
 
@@ -289,19 +306,46 @@ int main()
     return 0;
 }
 
+// navigating scenes using the WASD key
+// when a collision occurs, the camera is nudged slightly in the opposite direction of the key press
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
+    {
         camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        if (collisionDetect) {
+            camera.Position += vec3(0.0f, 0.0f, 0.1f); 
+        }
+    }
+    
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) 
+    {
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        if (collisionDetect) {
+            camera.Position -= vec3(0.0f, 0.0f, 0.1f);
+        }
+    }
+    
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) 
+    {
         camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        if (collisionDetect) {
+            camera.Position += vec3(0.1f, 0.0f, 0.0f);
+        }
+    }
+    
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) 
+    {
         camera.ProcessKeyboard(RIGHT, deltaTime);
+        if (collisionDetect) {
+            camera.Position -= vec3(0.1f, 0.0f, 0.0f);
+        }
+    }
+    
+    
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -309,6 +353,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+// navigating scenes using mouse, depending on the mode specified by imgui
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
     float xpos = static_cast<float>(xposIn);
@@ -323,12 +368,14 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos;
 
+    // block camera movement if i'm over imgui window 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
         return; 
     }
 
+    // when switch camera mode, reset camera position 
     if (trackBall != lastTrackball) {
-        camera.resetPosition(glm::vec3(0.0, 0.0, 3.0));
+        camera.resetPosition(glm::vec3(0.0f, 4.0f, 20.0f));
     }
 
     if (trackBall) {
@@ -349,8 +396,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
-
-//funzioni per la gestione le interazioni con le mesh 
+// this function is used in mouse_button_callback function
 vec3 get_ray_from_mouse(float mouse_x, float mouse_y) {
     //La funzione get_ray_from_mouse calcola il raggio che parte dalla posizione della telecamera
     //  e passa attraverso il punto sullo schermo corrispondente alla posizione del mouse.
@@ -386,6 +432,8 @@ vec3 get_ray_from_mouse(float mouse_x, float mouse_y) {
     return ray_wor;
 }
 
+// this function is used in mouse_button_callback function. 
+// return true if ray, determinated by center and a direction, cross a sphere
 bool ray_sphere(vec3 O, vec3 d, vec3 sphere_centre_wor, float sphere_radius, float* intersection_distance) {
 
     vec3 dist_sfera = O - sphere_centre_wor;
@@ -425,6 +473,7 @@ bool ray_sphere(vec3 O, vec3 d, vec3 sphere_centre_wor, float sphere_radius, flo
 }
 
 
+// select objects individually via mouse click
 void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods) 
 {
     double xpos, ypos; 
@@ -454,9 +503,6 @@ void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods)
                     }
                 }
             }
-            /*if (selected_obj > -1){
-                cout << "Oggetto selezionato " << scene[selected_obj].name.c_str() << endl;
-            }*/
         }
 
     default:

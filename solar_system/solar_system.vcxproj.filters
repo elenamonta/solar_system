@@ -104,5 +104,8 @@
     <ClInclude Include="Model.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

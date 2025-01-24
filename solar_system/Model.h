@@ -16,9 +16,8 @@
 class Model {
 public:
 	vector<Mesh> Model3D;
-	vec3 positionVec; 
-	vec3 scaleVec; 
-	vec3 rotationVec; 
+	vec3 positionVec, scaleVec, rotationVec; 
+	vec4 min_BB_obj, max_BB_obj, min_BB, max_BB; 
 	float angle; 
 
 	Model(const char* path, vec3 pos, vec3 scale, vec3 rotation, float angleDegree)
@@ -27,20 +26,23 @@ public:
 		scaleVec = scale; 
 		rotationVec = rotation; 
 		angle = angleDegree;
-		bool obj = loadAssImp(path);
+		bool flag = loadAssImp(path);
 		normalizeModel();
 		for (int i = 0; i < Model3D.size(); i++) {
 			Model3D[i].INIT_VAO();
+			Model3D[i].findBB();
 		}
-		//clear_objModel();
 	}
 
+	// rendering function
 	void draw(Shader& shader, shaderOpt shaderType)
 	{
 		for (int i = 0; i < Model3D.size(); i++) {
 			Model3D[i].setShader(shaderType); 
+			//all obj meshes have mixFactor = 0.0f, because the final color is determinate on lighting calculations 
 			Model3D[i].draw(shader, 0.0f);
 		}
+		updateOverallBB(); 
 	}
 
 	void clear_objModel() {
@@ -56,6 +58,9 @@ public:
 	}
 
 private: 
+	float minX, maxX, minY, maxY, minZ, maxZ;
+
+	// load texture with assimp
 	bool loadAssImp(const char* path)
 	{
 
@@ -164,10 +169,9 @@ private:
 		return true;
 	}
 
+	// normalize the 3D model represented by a set of meshes
 	void normalizeModel() {
 		int i, k;
-		int nmeshes = Model3D.size();
-		vector<vec3> minimo, massimo;
 		float minx, miny, minz, maxx, maxy, maxz;
 		vec3 centroid = { 0.0f, 0.0f, 0.0f };
 
@@ -185,24 +189,19 @@ private:
 		centroid /= numVertices;
 
 
-
 		for (i = 0; i < Model3D.size(); i++)
 			for (k = 0; k < Model3D[i].vertices.size(); k++)
 				Model3D[i].vertices[k] -= centroid;
 
 
 		// Troviamo i valori minimi e massimi per tutte le coordinate del modello
-		float minX = std::numeric_limits<float>::max();
-		float maxX = -std::numeric_limits<float>::max();
-		float minY = std::numeric_limits<float>::max();
-		float maxY = -std::numeric_limits<float>::max();
-		float minZ = std::numeric_limits<float>::max();
-		float maxZ = -std::numeric_limits<float>::max();
-
+		minX = minX = minZ = std::numeric_limits<float>::max();
+		maxX = maxY = maxZ = -std::numeric_limits<float>::max();
 
 		// Iteriamo su tutte le mesh e troviamo i minimi e massimi globali
 
 		for (i = 0; i < Model3D.size(); i++)
+		{
 			for (k = 0; k < Model3D[i].vertices.size(); k++)
 			{
 				minX = std::min(minX, Model3D[i].vertices[k].x);
@@ -211,13 +210,18 @@ private:
 				maxY = std::max(maxY, Model3D[i].vertices[k].y);
 				minZ = std::min(minZ, Model3D[i].vertices[k].z);
 				maxZ = std::max(maxZ, Model3D[i].vertices[k].z);
+				
 			}
+		}
 
+		this->min_BB_obj = vec4(minX, minY, minZ, 1.0f);
+		this->max_BB_obj = vec4(maxX, maxY, maxZ, 1.0f);
 
 		// Calcoliamo if fattore di scala per ogni dimensione (per mantenere le proporzioni
 		float rangeX = maxX - minX;
 		float rangeY = maxY - minY;
 		float rangeZ = maxZ - minZ;
+
 
 		float maxRange = std::max({ rangeX, rangeY, rangeZ });
 		for (i = 0; i < Model3D.size(); i++)
@@ -226,8 +230,24 @@ private:
 				Model3D[i].vertices[k].x = 2.0f * (Model3D[i].vertices[k].x - minX) / maxRange - 1.0f;
 				Model3D[i].vertices[k].y = 2.0f * (Model3D[i].vertices[k].y - minY) / maxRange - 1.0f;
 				Model3D[i].vertices[k].z = 2.0f * (Model3D[i].vertices[k].z - minZ) / maxRange - 1.0f;
+				
 			}
+	}
 
+	// update a global Bounding Box that contains all meshes BB
+	void updateOverallBB() {
+		this->min_BB = this->min_BB_obj;
+		this->max_BB = this->max_BB_obj;
 
+		for (int i = 0; i < Model3D.size(); i++) {
+			min_BB.x = std::min(min_BB.x, Model3D[i].min_BB.x);
+			max_BB.x = std::max(max_BB.x, Model3D[i].max_BB.x);
+
+			min_BB.y = std::min(min_BB.y, Model3D[i].min_BB.y);
+			max_BB.y = std::max(max_BB.y, Model3D[i].max_BB.y);
+
+			min_BB.z = std::min(min_BB.z, Model3D[i].min_BB.z);
+			max_BB.z = std::max(max_BB.z, Model3D[i].max_BB.z);
+		}
 	}
 };

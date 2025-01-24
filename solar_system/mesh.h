@@ -9,6 +9,7 @@
 #include <assimp/Importer.hpp>      
 #include <assimp/scene.h>           
 #include <assimp/postprocess.h>
+#include <algorithm>
 #include "material.h"
 
 
@@ -37,25 +38,18 @@ public:
 	GLuint VAO, VBO_vertices, VBO_colors, VBO_normals, EBO_indices, VBO_texCoords;
 	string name; 
 	Material material;
-	vec4 ancora_obj;
-	vec4 ancora_world;
+	vec4 ancora_obj, ancora_world, min_BB_obj, max_BB_obj, min_BB, max_BB;
 	GLuint textureID;
-	vec3 positions;
+	vec3 positions, scaleFactor;
 	int sceltaShader; 
 	float angle; 
 
 	Mesh(meshType type, string meshName, vec3 positionVec, vec3 scaleVec, vec3 rotationVec, float angleDegree)
 	{
-		switch (type) {
-		case cubo:
+		if (type == meshType::cubo)
 			crea_cubo();
-			break;
-		case sfera:
+		if (type == meshType::sfera)
 			crea_sfera();
-			break;
-		default:
-			break;
-		}
 
 		name = meshName;
 		material = Material();
@@ -64,11 +58,17 @@ public:
 		INIT_VAO();
 
 		Model = mat4(1.0f);
+
+		positions = positionVec;
 		Model = translate(Model, positionVec);
-		positions = positionVec; 
+
+		scaleFactor = scaleVec; 
 		Model = scale(Model, scaleVec);
+
 		angle = angleDegree; 
 		Model = rotate(Model, radians(angle), rotationVec);
+
+		// default shader
 		sceltaShader = shaderOpt::BlinnPhong;
 	}
 
@@ -85,6 +85,8 @@ public:
 	}
 
 
+	// rendering function
+	// all meshes have mixFactor = 1.0, because the final color is determinate only on a texture  
 	void draw(Shader& shader, float mixFactor) {
 		shader.use();
 		shader.setMat4("model", Model); 		
@@ -95,6 +97,8 @@ public:
 		shader.setFloat("mixFactor", mixFactor);
 		shader.setInt("texture_diffuse", 0);
 		shader.setInt("sceltaShader", sceltaShader);
+
+		updateBB();
 
 		ancora_world = ancora_obj; 
 		ancora_world = Model * ancora_obj;
@@ -155,8 +159,37 @@ public:
 
 		glDeleteVertexArrays(1, &VAO);
 	}
+	
+	// create meshes Axis-Aligned Bounding Box
+	void findBB() {
+		minx = maxx = this->vertices[0].x;
+		miny = maxy = this->vertices[0].y;
+		minz = maxz = this->vertices[0].z;
 
+		for (int i = 1; i < this->vertices.size(); i++) {
+			minx = std::min(minx, this->vertices[i].x);
+			miny = std::min(miny, this->vertices[i].y);
+			minz = std::min(minz, this->vertices[i].z);
+
+			maxx = std::max(maxx, this->vertices[i].x);
+			maxy = std::max(maxy, this->vertices[i].y);
+			maxz = std::max(maxz, this->vertices[i].z);
+		}
+
+		this->min_BB_obj = vec4(minx, miny, minz, 1.0f);
+		this->max_BB_obj = vec4(maxx, maxy, maxz, 1.0f);
+	}
+
+	// update meshes BB
+	void updateBB() {
+		this->min_BB = this->min_BB_obj;
+		this->max_BB = this->max_BB_obj;
+		this->min_BB = this->Model * this->min_BB;
+		this->max_BB = this->Model * this->max_BB;
+	}
 private:
+
+	float minx, maxx, miny, maxy, minz, maxz;
 
 	void crea_cubo() {
 		texCoords = {
@@ -281,5 +314,9 @@ private:
 
 		int nv = vertices.size();
 		indices.push_back(nv - 1);
+
+		findBB();
 	}
+
+		
 };

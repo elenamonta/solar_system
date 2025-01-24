@@ -103,6 +103,6 @@ class Gui {
 
 private:
 	GLFWwindow* Window;
-	bool trackballMode;
+	bool trackballMode = false;
 	int selected_id = -1;
 };
