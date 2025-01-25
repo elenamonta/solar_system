@@ -92,7 +92,6 @@ class Gui {
 			SetWindowSize(ImVec2(300, 100));
 			
 			Checkbox("Navigazione trackball", &trackballMode);
-			Checkbox("Visualizza Bounding Box", &flagBB);
 
 
 			End();

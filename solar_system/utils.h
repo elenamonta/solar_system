@@ -31,8 +31,8 @@ public:
         z = std::max(model.min_BB.z, std::min(cameraPosition.z, model.max_BB.z));
 
         float distance = glm::distance(cameraPosition, vec3(x, y, z));
-        
-        return distance < 1.0f;
+
+        return distance < 0.5f;
     }
 
     bool rayBoxIntersection(glm::vec4 min_BB, glm::vec4 max_BB, glm::vec3 rayStart, glm::vec3 rayDirection) {

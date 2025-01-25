@@ -6,8 +6,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "mesh.h"
 
-using namespace glm; 
-using namespace std; 
+using namespace glm;
+using namespace std;
 
 
 enum Camera_Movement {
@@ -20,7 +20,7 @@ enum Camera_Movement {
 // Default camera values
 const float THETA = -90.0f;
 const float PHI = 0.0f;
-const float SPEED = 2.5f;
+const float SPEED = 0.08f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
@@ -40,7 +40,7 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
-    bool trackballMode; 
+    bool trackballMode;
 
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), float theta = THETA, float phi = PHI) : MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
@@ -67,26 +67,11 @@ public:
     }
 
     // processes input received from any keyboard-like input system.
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    void ProcessKeyboard(Camera_Movement direction)
     {
-        float velocity = MovementSpeed * deltaTime;
+        float velocity = MovementSpeed;
 
-        if (direction == FORWARD) {
-            Direction = Target - Position;
-            Position += Direction * velocity;
-            if (trackballMode) {
-                Direction = glm::normalize(-Position);
-            }
-            Target = Position + Direction;
-        }
-        if (direction == BACKWARD) {
-            Direction = Target - Position;
-            Position -= Direction * velocity;
-            if (trackballMode) {
-                Direction = glm::normalize(-Position);
-            }
-            Target = Position + Direction;
-        }
+
         if (!trackballMode)
         {
             if (direction == LEFT) {
@@ -106,18 +91,34 @@ public:
         {
             if (direction == LEFT) {
                 glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); 
+                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f));
                 Direction = glm::normalize(-Position);
                 Target = glm::vec3(0.0f, 0.0f, 0.0f);
             }
             if (direction == RIGHT) {
                 glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f)); 
+                Position = glm::vec3(rotationMatrix * glm::vec4(Position, 0.0f));
                 Direction = glm::normalize(-Position);
                 Target = glm::vec3(0.0f, 0.0f, 0.0f);
             }
         }
-               
+
+        if (direction == FORWARD) {
+            Direction = Target - Position;
+            Position += Direction * velocity;
+            if (trackballMode) {
+                Direction = glm::normalize(-Position);
+            }
+            Target = Position + Direction;
+        }
+        else if (direction == BACKWARD) {
+            Direction = Target - Position;
+            Position -= Direction * velocity;
+            if (trackballMode) {
+                Direction = glm::normalize(-Position);
+            }
+            Target = Position + Direction;
+        }
 
     }
 
@@ -161,12 +162,12 @@ public:
     // processes input received from mouse input. When camera is on trackball mode
     void RotateAround(float width, float height, float xpos, float ypos, float last_mouse_pos_x, float last_mouse_pos_y)
     {
-        float velocity = 100.0f; 
+        float velocity = 100.0f;
         glm::vec3 destination = getTrackBallPoint(xpos, ypos, width, height);
         glm::vec3 origin;
         if (firstMouse) {
-            origin = getTrackBallPoint(width/2.0, height/2.0, width, height);
-            firstMouse = false; 
+            origin = getTrackBallPoint(width / 2.0, height / 2.0, width, height);
+            firstMouse = false;
         }
         else {
             origin = getTrackBallPoint(last_mouse_pos_x, last_mouse_pos_y, width, height);
@@ -184,20 +185,20 @@ public:
             Direction = Position - Target;
 
             Position = Target + glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(-angle), rotationAxis) * glm::vec4(Direction, 0.0f));
-           
+
             Target = glm::vec3(0.0f, 0.0f, 0.0f);
             Direction = glm::normalize(Target - Position);
         }
     }
 
-    void resetPosition(glm::vec3 pos, glm::vec3 target=glm::vec3(0.0,0.0,0.0)) {
+    void resetPosition(glm::vec3 pos, glm::vec3 target = glm::vec3(0.0, 0.0, 0.0)) {
         Position = pos;
-        Target = target; 
+        Target = target;
     }
 
 
 private:
-    bool firstMouse = true; 
+    bool firstMouse = true;
 
     glm::vec3 getTrackBallPoint(float x, float y, float width, float height)
     {

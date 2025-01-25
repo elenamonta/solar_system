@@ -22,7 +22,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
-void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods); 
+void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods);
 
 GLFWwindow* window;
 
@@ -44,7 +44,7 @@ float lastFrame = 0.0f;
 
 vector<string> planetNames;
 vector<Mesh> scene;
-vector<Model> sceneObj; 
+vector<Model> sceneObj;
 int selected_obj = -1;
 
 glm::mat4 projection;
@@ -54,7 +54,7 @@ string modelDir = "Model/";
 string SkyboxDir = "SkyBoxes/";
 string imageDir = "Texture/";
 vector<string> pathTexture;
-vector<int> texture; 
+vector<int> texture;
 
 
 int main()
@@ -65,7 +65,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
+#ifdef _APPLE_
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
@@ -77,7 +77,7 @@ int main()
         glfwTerminate();
         return -1;
     }
-    
+
     Gui imgui(window);
 
     glfwMakeContextCurrent(window);
@@ -103,18 +103,18 @@ int main()
             "bottom.jpg",
             "front.jpg",
             "back.jpg"*/
-        /*SkyboxDir + "posx.jpg",
-        SkyboxDir + "negx.jpg",
-        SkyboxDir + "posy.jpg",
-        SkyboxDir + "negy.jpg",
-        SkyboxDir + "posz.jpg",
-        SkyboxDir + "negz.jpg"*/
-        SkyboxDir + "/toDelete/1.png",
-        SkyboxDir + "/toDelete/2.png",
-        SkyboxDir + "/toDelete/3.png",
-        SkyboxDir + "/toDelete/6.png",
-        SkyboxDir + "/toDelete/4.png",
-        SkyboxDir + "/toDelete/5.png"
+            /*SkyboxDir + "posx.jpg",
+            SkyboxDir + "negx.jpg",
+            SkyboxDir + "posy.jpg",
+            SkyboxDir + "negy.jpg",
+            SkyboxDir + "posz.jpg",
+            SkyboxDir + "negz.jpg"*/
+            SkyboxDir + "/toDelete/1.png",
+            SkyboxDir + "/toDelete/2.png",
+            SkyboxDir + "/toDelete/3.png",
+            SkyboxDir + "/toDelete/6.png",
+            SkyboxDir + "/toDelete/4.png",
+            SkyboxDir + "/toDelete/5.png"
 
     };
     unsigned int cubemapTexture = Texture().loadCubemap(faces, 0);
@@ -167,14 +167,14 @@ int main()
     Mesh sfera(meshType::sfera, planetNames[0], vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
     sfera.setMaterial(Material::getMaterial(MaterialType::RedPlastic));
     scene.push_back(sfera);
-    
+
     // then build the other planets with their own texture
     for (int i = 1; i < NR_PLANETS; i++) {
         Mesh sfera(meshType::sfera, planetNames[i], vec3(i * 2.0, 0.0, 0.0), scaleValue[i], vec3(1.0f, 0.0f, 0.0f), 0.0f);
         sfera.setTexture(texture[i]);
         scene.push_back(sfera);
     }
-    
+
 
     // build meshes obj and push them in sceneObj vector
     Model ufo((modelDir + "ufo.obj").c_str(), vec3(2.0f, 2.0f, 5.0f), vec3(0.5f, 0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
@@ -191,62 +191,57 @@ int main()
     // render loop
     while (!glfwWindowShouldClose(window))
     {
-
-        //imgui
-        imgui.my_interface();
-        imgui.set_selected_id(selected_obj);
-
-        // input
-        processInput(window);
-
-        // render
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        lightingShader.use();
-        lightingShader.setVec3("viewPos", camera.Position);
-
-        // set uniforms point lights
-        lightingShader.setVec3("pointLights[0].position", imgui.lightPosition1);
-        lightingShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-
-        lightingShader.setVec3("pointLights[1].position", imgui.lightPosition2);
-        lightingShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
-
-        
-        // view/projection transformations
-        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        view = camera.GetViewMatrix();
-        lightingShader.setMat4("projection", projection);
-        lightingShader.setMat4("view", view);
-
-        // Skybox uniform
-        glDepthMask(GL_FALSE);
-        skyboxShader.use(); 
-        skyboxShader.setMat4("projection", projection); 
-        skyboxShader.setMat4("view", view);
-        glBindVertexArray(sky.VAO);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        glDrawElements(GL_TRIANGLES, sky.indices.size() * sizeof(GLuint), GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        glDepthMask(GL_TRUE);
-
-
-        BBShader.use(); 
-        BBShader.setMat4("projection", projection);
-        BBShader.setMat4("view", view);
-        BBShader.setBool("viewBB", imgui.get_flagBB()); 
-
-        // orbital movement
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         // update frequency control
         if (deltaTime > 0.016f) {
             lastFrame = currentFrame;
+
+            //imgui
+            imgui.my_interface();
+            imgui.set_selected_id(selected_obj);
+
+            // input
+            processInput(window);
+
+            // render
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            lightingShader.use();
+            lightingShader.setVec3("viewPos", camera.Position);
+
+            // set uniforms point lights
+            lightingShader.setVec3("pointLights[0].position", imgui.lightPosition1);
+            lightingShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+            lightingShader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+            lightingShader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+
+            lightingShader.setVec3("pointLights[1].position", imgui.lightPosition2);
+            lightingShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+            lightingShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+            lightingShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+
+
+            // view/projection transformations
+            projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+            view = camera.GetViewMatrix();
+            lightingShader.setMat4("projection", projection);
+            lightingShader.setMat4("view", view);
+
+            // Skybox uniform
+            glDepthMask(GL_FALSE);
+            skyboxShader.use();
+            skyboxShader.setMat4("projection", projection);
+            skyboxShader.setMat4("view", view);
+            glBindVertexArray(sky.VAO);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+            glDrawElements(GL_TRIANGLES, sky.indices.size() * sizeof(GLuint), GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+            glDepthMask(GL_TRUE);
+
+
+            // orbital movement
             for (int i = 0; i < NR_PLANETS; i++) {
                 float angle = i * 0.2f;
                 float radians = glm::radians(angle);
@@ -260,56 +255,60 @@ int main()
                 scene[i].Model = glm::rotate(scene[i].Model, glm::radians(scene[i].angle), glm::vec3(0.0f, 1.0f, 0.0f));
                 scene[i].Model = scale(scene[i].Model, scaleValue[i]);
             }
-        }
 
 
-        // set material from gui
-        scene[0].setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
-        
-        // draw all meshes
-        scene[0].setShader(static_cast<shaderOpt>(imgui.selectedShader));
-        scene[0].draw(lightingShader, 0.0f);
+            // set material from gui
+            scene[0].setMaterial(Material::getMaterial(static_cast<MaterialType>(imgui.selectedMaterialType)));
 
-        for(int i = 1; i < NR_PLANETS; i++)
-            scene[i].draw(lightingShader, 1.0f);
+            // draw all meshes
+            scene[0].setShader(static_cast<shaderOpt>(imgui.selectedShader));
+            scene[0].draw(lightingShader, 0.0f);
 
-        for (int i = 0; i < sceneObj.size(); i++) 
-            sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader), BBShader);
+            for (int i = 1; i < NR_PLANETS; i++)
+                scene[i].draw(lightingShader, 1.0f);
 
+            for (int i = 0; i < sceneObj.size(); i++)
+                sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader), BBShader);
 
-        // collision detections
-        for (int i = 0; i < scene.size(); i++) {
-            if (Utils().isColliding(camera.Position, scene[i])) {
-                camera.Position += glm::normalize(camera.Position - scene[i].positions);
-                camera.Direction = glm::normalize(camera.Target - camera.Position);
-                camera.Target = camera.Position + camera.Direction;
+            system("cls");
+
+            // collision detections
+            for (int i = 0; i < scene.size(); i++) {
+                if (Utils().isColliding(camera.Position, scene[i])) {
+                    camera.Position += glm::normalize(camera.Position - scene[i].positions);
+                    camera.Direction = glm::normalize(camera.Target - camera.Position);
+                    camera.Target = camera.Position + camera.Direction;
+                }
             }
-        }
-        
 
-        for (int i = 0; i < sceneObj.size(); i++) {
-            if (Utils().isCollidingObj(camera.Position, sceneObj[i]) && Utils().rayBoxIntersection(sceneObj[i].min_BB, sceneObj[i].max_BB, camera.Position, camera.Direction)) {
-                cout << "." << endl;
-                camera.Position += glm::normalize(camera.Position - sceneObj[i].positionVec);
-                camera.Direction = glm::normalize(camera.Target - camera.Position);
-                camera.Target = camera.Position + camera.Direction;
+            for (int i = 0; i < sceneObj.size(); i++) {
+                if (Utils().isCollidingObj(camera.Position, sceneObj[i]) && Utils().rayBoxIntersection(sceneObj[i].min_BB, sceneObj[i].max_BB, sceneObj[i].positionVec, camera.Direction)) {
+                    camera.Position += glm::normalize(camera.Position - sceneObj[i].positionVec);
+                    camera.Direction = glm::normalize(camera.Target - camera.Position);
+                    camera.Target = camera.Position + camera.Direction;
+                    
+                    /*cout << sceneObj[i].min_BB.x << " " << sceneObj[i].min_BB.y << " " << sceneObj[i].min_BB.z << endl;
+                    cout << sceneObj[i].max_BB.x << " " << sceneObj[i].max_BB.y << " " << sceneObj[i].max_BB.z << endl;
+
+                    cout << i << endl;*/
+                }
             }
+            
+            // check gui trackball flag 
+            camera.setTrackballMode(imgui.get_trackball_mode());
+            trackBall = imgui.get_trackball_mode();
+
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            glfwSwapBuffers(window);
+            glfwPollEvents();
         }
 
-
-        // check gui trackball flag 
-        camera.setTrackballMode(imgui.get_trackball_mode());
-        trackBall = imgui.get_trackball_mode();
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     // de-allocate all resources
-    for (int i = 0; i < scene.size(); i++) 
+    for (int i = 0; i < scene.size(); i++)
         scene[i].DESTROY_VAO();
-    
+
     for (int i = 0; i < sceneObj.size(); i++)
         sceneObj[i].clear_objModel();
 
@@ -327,28 +326,28 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD);
     }
-    
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) 
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(BACKWARD);
     }
-    
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) 
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(LEFT);
     }
-    
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) 
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera.ProcessKeyboard(RIGHT);
     }
-    
-    
+
+
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -373,7 +372,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     // block camera movement if i'm over imgui window 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
-        return; 
+        return;
     }
 
     // when switch camera mode, reset camera position 
@@ -412,10 +411,10 @@ vec3 get_ray_from_mouse(float mouse_x, float mouse_y) {
     float ndc_x = (2.0f * mouse_x) / SCR_WIDTH - 1.0;
     float ndc_y = (2.0f * mouse_y) / SCR_HEIGHT - 1.0;
 
-    //Nello spazio di clippling z più piccola, oggetto più vicino all'osservatore, quindi si pone la z a - 1, 
+    //Nello spazio di clippling z pi  piccola, oggetto pi  vicino all'osservatore, quindi si pone la z a - 1, 
     // posizionando il punto sul piano vicino del frustum.
-    // Questo significa che il raggio che stiamo calcolando partirà dalla telecamera e si dirigerà 
-    // verso il punto più vicino visibile sullo schermo.
+    // Questo significa che il raggio che stiamo calcolando partir  dalla telecamera e si diriger  
+    // verso il punto pi  vicino visibile sullo schermo.
     float ndc_z = -1.0f;
 
     // Coordinate nel clip space 
@@ -448,7 +447,7 @@ bool ray_sphere(vec3 O, vec3 d, vec3 sphere_centre_wor, float sphere_radius, flo
     if (delta < 0)  //Il raggio non interseca la sfera
         return false;
     //Calcolo i valori di t per cui il raggio interseca la sfera e restituisco il valore dell'intersezione 
-    //più vicina all'osservatore (la t più piccola)
+    //pi  vicina all'osservatore (la t pi  piccola)
     if (delta > 0.0f) {
         //calcola le due intersezioni
         float t_a = -b + sqrt(delta);
@@ -463,7 +462,7 @@ bool ray_sphere(vec3 O, vec3 d, vec3 sphere_centre_wor, float sphere_radius, flo
 
         return true;
     }
-    //Caso in cui il raggio è tangente alla sfera: un interesezione con molteplicità doppia.
+    //Caso in cui il raggio   tangente alla sfera: un interesezione con molteplicit  doppia.
     if (delta == 0) {
         float t = -b + sqrt(delta);
         if (t < 0)
@@ -477,9 +476,9 @@ bool ray_sphere(vec3 O, vec3 d, vec3 sphere_centre_wor, float sphere_radius, flo
 
 
 // select objects individually via mouse click
-void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods) 
+void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods)
 {
-    double xpos, ypos; 
+    double xpos, ypos;
     switch (btn)
     {
     case GLFW_MOUSE_BUTTON_LEFT:
@@ -512,5 +511,3 @@ void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods)
         break;
     }
 }
-
-

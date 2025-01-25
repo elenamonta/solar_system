@@ -243,18 +243,11 @@ private:
 
 	// update a global Bounding Box that contains all meshes BB
 	void updateOverallBB() {
-		this->min_BB = this->min_BB_obj;
-		this->max_BB = this->max_BB_obj;
-
 		for (int i = 0; i < Model3D.size(); i++) {
-			//Model3D[i].updateBB(); 
-			min_BB.x = std::min(min_BB.x, Model3D[i].min_BB.x);
-			min_BB.y = std::min(min_BB.y, Model3D[i].min_BB.y);
-			min_BB.z = std::min(min_BB.z, Model3D[i].min_BB.z);
-
-			max_BB.x = std::max(max_BB.x, Model3D[i].max_BB.x);
-			max_BB.y = std::max(max_BB.y, Model3D[i].max_BB.y);
-			max_BB.z = std::max(max_BB.z, Model3D[i].max_BB.z);
+			this->min_BB = this->min_BB_obj;
+			this->max_BB = this->max_BB_obj;
+			this->min_BB = Model3D[i].Model * this->min_BB;
+			this->max_BB = Model3D[i].Model * this->max_BB;
 		}
 	}
 
