@@ -103,19 +103,12 @@ int main()
             "bottom.jpg",
             "front.jpg",
             "back.jpg"*/
-            /*SkyboxDir + "posx.jpg",
+            SkyboxDir + "posx.jpg",
             SkyboxDir + "negx.jpg",
             SkyboxDir + "posy.jpg",
             SkyboxDir + "negy.jpg",
             SkyboxDir + "posz.jpg",
-            SkyboxDir + "negz.jpg"*/
-            SkyboxDir + "/toDelete/1.png",
-            SkyboxDir + "/toDelete/2.png",
-            SkyboxDir + "/toDelete/3.png",
-            SkyboxDir + "/toDelete/6.png",
-            SkyboxDir + "/toDelete/4.png",
-            SkyboxDir + "/toDelete/5.png"
-
+            SkyboxDir + "negz.jpg"
     };
     unsigned int cubemapTexture = Texture().loadCubemap(faces, 0);
 
@@ -282,15 +275,10 @@ int main()
             }
 
             for (int i = 0; i < sceneObj.size(); i++) {
-                if (Utils().isCollidingObj(camera.Position, sceneObj[i]) && Utils().rayBoxIntersection(sceneObj[i].min_BB, sceneObj[i].max_BB, sceneObj[i].positionVec, camera.Direction)) {
-                    camera.Position += glm::normalize(camera.Position - sceneObj[i].positionVec);
+                if (Utils().isCollidingObj(camera.Position, sceneObj[i])) { 
+                    camera.Position += (0.1f * glm::normalize(camera.Position - sceneObj[i].positionVec));
                     camera.Direction = glm::normalize(camera.Target - camera.Position);
                     camera.Target = camera.Position + camera.Direction;
-                    
-                    /*cout << sceneObj[i].min_BB.x << " " << sceneObj[i].min_BB.y << " " << sceneObj[i].min_BB.z << endl;
-                    cout << sceneObj[i].max_BB.x << " " << sceneObj[i].max_BB.y << " " << sceneObj[i].max_BB.z << endl;
-
-                    cout << i << endl;*/
                 }
             }
             
@@ -371,7 +359,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     float yoffset = lastY - ypos;
 
     // block camera movement if i'm over imgui window 
-    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsAnyItemHovered()) {
         return;
     }
 

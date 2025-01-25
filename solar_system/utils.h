@@ -35,34 +35,6 @@ public:
         return distance < 0.5f;
     }
 
-    bool rayBoxIntersection(glm::vec4 min_BB, glm::vec4 max_BB, glm::vec3 rayStart, glm::vec3 rayDirection) {
-        // Usa solo x, y, z delle bounding box (componente w non viene usata)
-        glm::vec3 minBox(min_BB.x, min_BB.y, min_BB.z);
-        glm::vec3 maxBox(max_BB.x, max_BB.y, max_BB.z);
-
-        // Calcola i bounds relativi al raggio
-        glm::vec3 boundsFirst = minBox - rayStart;
-        glm::vec3 boundsSecond = maxBox - rayStart;
-
-        // Calcola i tMin e tMax per ciascuna direzione
-        float txMin = boundsFirst.x / rayDirection.x;
-        float txMax = boundsSecond.x / rayDirection.x;
-        float tyMin = boundsFirst.y / rayDirection.y;
-        float tyMax = boundsSecond.y / rayDirection.y;
-        float tzMin = boundsFirst.z / rayDirection.z;
-        float tzMax = boundsSecond.z / rayDirection.z;
-
-        // Calcola i tMin e tMax finali, tenendo conto delle intersezioni lungo tutte le dimensioni
-        float tMin = std::max(std::min(txMin, txMax), std::min(tyMin, tyMax));
-        tMin = std::max(tMin, std::min(tzMin, tzMax));
-
-        float tMax = std::min(std::max(txMin, txMax), std::max(tyMin, tyMax));
-        tMax = std::min(tMax, std::max(tzMin, tzMax));
-
-        // Se tMax è maggiore di tMin, significa che c'è un'intersezione
-        return tMax > tMin;
-    }
-
 
 private:
     float x = 0.0f, y = 0.f, z = 0.0f;

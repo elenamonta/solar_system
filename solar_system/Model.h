@@ -32,8 +32,6 @@ public:
 			Model3D[i].INIT_VAO();
 			Model3D[i].findBB();
 		}
-		updateOverallBB();
-		creaBB(); 
 	}
 
 	// rendering function
@@ -41,12 +39,10 @@ public:
 	{
 		for (int i = 0; i < Model3D.size(); i++) {
 			Model3D[i].setShader(shaderType); 
-			Model3D[i].updateBB(); 
 			//all obj meshes have mixFactor = 0.0f, because the final color is determinate on lighting calculations 
 			Model3D[i].draw(shader, 0.0f);
 		}
 		updateOverallBB();
-		drawBB(shBB); 
 	}
 
 	void clear_objModel() {
@@ -251,73 +247,6 @@ private:
 		}
 	}
 
-	void creaBB() {
-		vertices = {
-			{min_BB.x, min_BB.y, min_BB.z}, // V0
-			{max_BB.x, min_BB.y, min_BB.z}, // V1
-			{max_BB.x, max_BB.y, min_BB.z}, // V2
-			{min_BB.x, max_BB.y, min_BB.z}, // V3
-			{min_BB.x, min_BB.y, max_BB.z}, // V4
-			{max_BB.x, min_BB.y, max_BB.z}, // V5
-			{max_BB.x, max_BB.y, max_BB.z}, // V6
-			{min_BB.x, max_BB.y, max_BB.z}  // V7
-		};
-
-		colors = {
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{1.0f, 0.0f, 0.0f, 1.0f},
-		};
-
-
-		indices = {
-			0, 1, 1, 2, 2, 3, 3, 0, // Lato inferiore
-			4, 5, 5, 6, 6, 7, 7, 4, // Lato superiore
-			0, 4, 1, 5, 2, 6, 3, 7  // Connettori tra superiore e inferiore
-		};
-
-		int nv = vertices.size();
-		indices.push_back(nv - 1);
-
-
-		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
-
-		glGenBuffers(1, &VBO_vertices);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec3), vertices.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-		glEnableVertexAttribArray(0);
-
-		glGenBuffers(1, &VBO_colors);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO_colors);
-		glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(vec4), colors.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
-		glEnableVertexAttribArray(1);
-
-		glGenBuffers(1, &EBO_indices);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_indices);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
-
-	}
-
-	void drawBB(Shader& shader) {
-		updateOverallBB(); 
-		
-		for (int i = 0; i < Model3D.size(); i++) {
-			shader.use();
-			shader.setMat4("model", Model3D[i].Model);
-		}
-		glBindVertexArray(VAO);
-		glDrawElements(GL_LINE_LOOP, (indices.size() - 1) * sizeof(GLuint), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-	}
+	
 
 };
