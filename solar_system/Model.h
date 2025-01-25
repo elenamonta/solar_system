@@ -32,17 +32,21 @@ public:
 			Model3D[i].INIT_VAO();
 			Model3D[i].findBB();
 		}
+		updateOverallBB();
+		creaBB(); 
 	}
 
 	// rendering function
-	void draw(Shader& shader, shaderOpt shaderType)
+	void draw(Shader& shader, shaderOpt shaderType, Shader& shBB)
 	{
 		for (int i = 0; i < Model3D.size(); i++) {
 			Model3D[i].setShader(shaderType); 
+			Model3D[i].updateBB(); 
 			//all obj meshes have mixFactor = 0.0f, because the final color is determinate on lighting calculations 
 			Model3D[i].draw(shader, 0.0f);
 		}
-		updateOverallBB(); 
+		updateOverallBB();
+		drawBB(shBB); 
 	}
 
 	void clear_objModel() {
@@ -59,6 +63,10 @@ public:
 
 private: 
 	float minX, maxX, minY, maxY, minZ, maxZ;
+	vector<vec3> vertices;
+	vector<vec4> colors;
+	vector<GLuint> indices;
+	GLuint VAO, VBO_vertices, VBO_colors, EBO_indices;
 
 	// load texture with assimp
 	bool loadAssImp(const char* path)
@@ -175,7 +183,7 @@ private:
 		float minx, miny, minz, maxx, maxy, maxz;
 		vec3 centroid = { 0.0f, 0.0f, 0.0f };
 
-		//Calcolo il centroide della mesh (facendo la medua dei suoi vertici)
+		//Calcolo il centroide della mesh (facendo la media dei suoi vertici)
 		int numVertices = 0;
 		for (i = 0; i < Model3D.size(); i++)
 
@@ -195,8 +203,8 @@ private:
 
 
 		// Troviamo i valori minimi e massimi per tutte le coordinate del modello
-		minX = minX = minZ = std::numeric_limits<float>::max();
-		maxX = maxY = maxZ = -std::numeric_limits<float>::max();
+		minX = minY = minZ = std::numeric_limits<float>::max();
+		maxX = maxY = maxZ = std::numeric_limits<float>::lowest();
 
 		// Iteriamo su tutte le mesh e troviamo i minimi e massimi globali
 
@@ -214,9 +222,7 @@ private:
 			}
 		}
 
-		this->min_BB_obj = vec4(minX, minY, minZ, 1.0f);
-		this->max_BB_obj = vec4(maxX, maxY, maxZ, 1.0f);
-
+		
 		// Calcoliamo if fattore di scala per ogni dimensione (per mantenere le proporzioni
 		float rangeX = maxX - minX;
 		float rangeY = maxY - minY;
@@ -227,11 +233,12 @@ private:
 		for (i = 0; i < Model3D.size(); i++)
 			for (k = 0; k < Model3D[i].vertices.size(); k++)
 			{
-				Model3D[i].vertices[k].x = 2.0f * (Model3D[i].vertices[k].x - minX) / maxRange - 1.0f;
-				Model3D[i].vertices[k].y = 2.0f * (Model3D[i].vertices[k].y - minY) / maxRange - 1.0f;
-				Model3D[i].vertices[k].z = 2.0f * (Model3D[i].vertices[k].z - minZ) / maxRange - 1.0f;
-				
+				Model3D[i].vertices[k] /= maxRange; 
 			}
+
+		this->min_BB_obj = vec4(minX / maxRange, minY / maxRange, minZ / maxRange, 1.0f);
+		this->max_BB_obj = vec4(maxX / maxRange, maxY / maxRange, maxZ / maxRange, 1.0f);
+
 	}
 
 	// update a global Bounding Box that contains all meshes BB
@@ -240,14 +247,84 @@ private:
 		this->max_BB = this->max_BB_obj;
 
 		for (int i = 0; i < Model3D.size(); i++) {
+			//Model3D[i].updateBB(); 
 			min_BB.x = std::min(min_BB.x, Model3D[i].min_BB.x);
-			max_BB.x = std::max(max_BB.x, Model3D[i].max_BB.x);
-
 			min_BB.y = std::min(min_BB.y, Model3D[i].min_BB.y);
-			max_BB.y = std::max(max_BB.y, Model3D[i].max_BB.y);
-
 			min_BB.z = std::min(min_BB.z, Model3D[i].min_BB.z);
+
+			max_BB.x = std::max(max_BB.x, Model3D[i].max_BB.x);
+			max_BB.y = std::max(max_BB.y, Model3D[i].max_BB.y);
 			max_BB.z = std::max(max_BB.z, Model3D[i].max_BB.z);
 		}
 	}
+
+	void creaBB() {
+		vertices = {
+			{min_BB.x, min_BB.y, min_BB.z}, // V0
+			{max_BB.x, min_BB.y, min_BB.z}, // V1
+			{max_BB.x, max_BB.y, min_BB.z}, // V2
+			{min_BB.x, max_BB.y, min_BB.z}, // V3
+			{min_BB.x, min_BB.y, max_BB.z}, // V4
+			{max_BB.x, min_BB.y, max_BB.z}, // V5
+			{max_BB.x, max_BB.y, max_BB.z}, // V6
+			{min_BB.x, max_BB.y, max_BB.z}  // V7
+		};
+
+		colors = {
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 0.0f, 1.0f},
+		};
+
+
+		indices = {
+			0, 1, 1, 2, 2, 3, 3, 0, // Lato inferiore
+			4, 5, 5, 6, 6, 7, 7, 4, // Lato superiore
+			0, 4, 1, 5, 2, 6, 3, 7  // Connettori tra superiore e inferiore
+		};
+
+		int nv = vertices.size();
+		indices.push_back(nv - 1);
+
+
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
+
+		glGenBuffers(1, &VBO_vertices);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec3), vertices.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glGenBuffers(1, &VBO_colors);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO_colors);
+		glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(vec4), colors.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glEnableVertexAttribArray(1);
+
+		glGenBuffers(1, &EBO_indices);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_indices);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+	}
+
+	void drawBB(Shader& shader) {
+		updateOverallBB(); 
+		
+		for (int i = 0; i < Model3D.size(); i++) {
+			shader.use();
+			shader.setMat4("model", Model3D[i].Model);
+		}
+		glBindVertexArray(VAO);
+		glDrawElements(GL_LINE_LOOP, (indices.size() - 1) * sizeof(GLuint), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+	}
+
 };

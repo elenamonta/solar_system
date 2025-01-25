@@ -22,7 +22,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
-void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods);
+void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods); 
 
 GLFWwindow* window;
 
@@ -32,7 +32,7 @@ unsigned int SCR_HEIGHT = 800;
 float w_up = SCR_WIDTH, h_up = SCR_HEIGHT;
 
 // camera
-Camera camera(glm::vec3(0.0f, 4.0f, 20.0f));
+Camera camera(glm::vec3(0.0f, 4.0f, 15.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -56,8 +56,6 @@ string imageDir = "Texture/";
 vector<string> pathTexture;
 vector<int> texture; 
 
-
-bool collisionDetect = false; 
 
 int main()
 {
@@ -99,12 +97,24 @@ int main()
     // load cubemap texture
     vector<std::string> faces
     {
-        SkyboxDir + "posx.jpg",
+        /*"right.jpg",
+            "left.jpg",
+            "top.jpg",
+            "bottom.jpg",
+            "front.jpg",
+            "back.jpg"*/
+        /*SkyboxDir + "posx.jpg",
         SkyboxDir + "negx.jpg",
         SkyboxDir + "posy.jpg",
         SkyboxDir + "negy.jpg",
         SkyboxDir + "posz.jpg",
-        SkyboxDir + "negz.jpg"
+        SkyboxDir + "negz.jpg"*/
+        SkyboxDir + "/toDelete/1.png",
+        SkyboxDir + "/toDelete/2.png",
+        SkyboxDir + "/toDelete/3.png",
+        SkyboxDir + "/toDelete/6.png",
+        SkyboxDir + "/toDelete/4.png",
+        SkyboxDir + "/toDelete/5.png"
 
     };
     unsigned int cubemapTexture = Texture().loadCubemap(faces, 0);
@@ -131,8 +141,8 @@ int main()
     // build and compile shader program
     Shader lightingShader("vertexShader.glsl", "fragmentShader.glsl");
     Shader skyboxShader("vertexShader_CubeMap.glsl", "fragmentShader_CubeMap.glsl");
-    
-   
+    Shader BBShader("vertexShaderBB.glsl", "fragmentShaderBB.glsl");
+
     // build the skybox as if it were a mesh
     Mesh sky(meshType::cubo, "", vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
 
@@ -167,7 +177,7 @@ int main()
     
 
     // build meshes obj and push them in sceneObj vector
-    Model ufo((modelDir + "ufo.obj").c_str(), vec3(2.0f, 2.5f, 7.0f), vec3(0.2f, 0.2f, 0.2f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
+    Model ufo((modelDir + "ufo.obj").c_str(), vec3(2.0f, 2.0f, 5.0f), vec3(0.5f, 0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f), 340.0f);
     Model spaceship((modelDir + "Low Poly Spaceship.obj").c_str(), vec3(-2.0, 3.0, 2.0), vec3(0.5f, 0.5f, 0.5f), vec3(0.0, 1.0, 0.0), 35.f);
 
     sceneObj.push_back(ufo);
@@ -207,6 +217,7 @@ int main()
         lightingShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
         lightingShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
 
+        
         // view/projection transformations
         projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
@@ -224,6 +235,11 @@ int main()
         glBindVertexArray(0);
         glDepthMask(GL_TRUE);
 
+
+        BBShader.use(); 
+        BBShader.setMat4("projection", projection);
+        BBShader.setMat4("view", view);
+        BBShader.setBool("viewBB", imgui.get_flagBB()); 
 
         // orbital movement
         float currentFrame = glfwGetTime();
@@ -258,27 +274,25 @@ int main()
             scene[i].draw(lightingShader, 1.0f);
 
         for (int i = 0; i < sceneObj.size(); i++) 
-            sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader));
+            sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader), BBShader);
 
 
         // collision detections
         for (int i = 0; i < scene.size(); i++) {
             if (Utils().isColliding(camera.Position, scene[i])) {
-                collisionDetect = true; 
-                break;
-            }
-            else {
-                collisionDetect = false; 
+                camera.Position += glm::normalize(camera.Position - scene[i].positions);
+                camera.Direction = glm::normalize(camera.Target - camera.Position);
+                camera.Target = camera.Position + camera.Direction;
             }
         }
+        
 
         for (int i = 0; i < sceneObj.size(); i++) {
-            if (Utils().isCollidingObj(camera.Position, sceneObj[i])) {
-                collisionDetect = true; 
-                break; 
-            }
-            else {
-                collisionDetect = false; 
+            if (Utils().isCollidingObj(camera.Position, sceneObj[i]) && Utils().rayBoxIntersection(sceneObj[i].min_BB, sceneObj[i].max_BB, camera.Position, camera.Direction)) {
+                cout << "." << endl;
+                camera.Position += glm::normalize(camera.Position - sceneObj[i].positionVec);
+                camera.Direction = glm::normalize(camera.Target - camera.Position);
+                camera.Target = camera.Position + camera.Direction;
             }
         }
 
@@ -312,37 +326,26 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
     
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
     {
         camera.ProcessKeyboard(FORWARD, deltaTime);
-        if (collisionDetect) {
-            camera.Position += vec3(0.0f, 0.0f, 0.1f); 
-        }
     }
     
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) 
     {
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-        if (collisionDetect) {
-            camera.Position -= vec3(0.0f, 0.0f, 0.1f);
-        }
     }
     
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) 
     {
         camera.ProcessKeyboard(LEFT, deltaTime);
-        if (collisionDetect) {
-            camera.Position += vec3(0.1f, 0.0f, 0.0f);
-        }
     }
     
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) 
     {
         camera.ProcessKeyboard(RIGHT, deltaTime);
-        if (collisionDetect) {
-            camera.Position -= vec3(0.1f, 0.0f, 0.0f);
-        }
     }
     
     
@@ -375,7 +378,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     // when switch camera mode, reset camera position 
     if (trackBall != lastTrackball) {
-        camera.resetPosition(glm::vec3(0.0f, 4.0f, 20.0f));
+        camera.resetPosition(glm::vec3(0.0f, 4.0f, 15.0f));
     }
 
     if (trackBall) {
@@ -509,3 +512,5 @@ void mouse_button_callback(GLFWwindow* window, int btn, int action, int mods)
         break;
     }
 }
+
+

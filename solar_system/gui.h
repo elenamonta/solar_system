@@ -14,6 +14,7 @@ class Gui {
 
 		int selectedMaterialType = 0;
 		int selectedShader = 0; 
+		bool flagBB = false; 
 		vec3 lightPosition1 = vec3(0.7f, 0.2f, 5.0f);
 		vec3 lightPosition2 = vec3(-6.0f, 2.0f, 0.0f);
 
@@ -38,6 +39,10 @@ class Gui {
 
 		bool get_trackball_mode() {
 			return this->trackballMode;
+		}
+
+		bool get_flagBB() {
+			return this->flagBB;
 		}
 
 		void my_interface() {
@@ -87,6 +92,8 @@ class Gui {
 			SetWindowSize(ImVec2(300, 100));
 			
 			Checkbox("Navigazione trackball", &trackballMode);
+			Checkbox("Visualizza Bounding Box", &flagBB);
+
 
 			End();
 

@@ -25,7 +25,7 @@ uniform Material material;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform sampler2D texture_diffuse; 
 uniform float mixFactor; 
-uniform int sceltaShader; 
+uniform int sceltaShader;
 
 void main()
 {
@@ -58,9 +58,16 @@ void main()
     //FragColor = textureColor; 
     //FragColor = vec4(result, 1.0);
     //FragColor = mix(vec4(result, 1.0), textureColor, mixFactor);
-    if(mixFactor == 1.0){
+    
+    /*if(viewBB){
+        FragColor = fragColor; 
+    }*/
+
+    if (mixFactor == 1.0){
         FragColor = textureColor;
     }else{
         FragColor = vec4(result, 1.0);
     }
+
+    
 }
