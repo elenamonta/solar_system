@@ -20,7 +20,7 @@ enum Camera_Movement {
 // Default camera values
 const float THETA = -90.0f;
 const float PHI = 0.0f;
-const float SPEED = 0.08f;
+const float SPEED = 0.1f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 

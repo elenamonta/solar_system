@@ -19,7 +19,8 @@ struct PointLight {
 in vec3 FragPos;  
 in vec3 Normal;  
 in vec2 TexCoords; 
-  
+in vec3 LightingColor;
+
 uniform vec3 viewPos;
 uniform Material material;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
@@ -41,15 +42,21 @@ void main()
         vec3 viewDir = normalize(viewPos - FragPos);
         float spec;
 
-        if(sceltaShader==0)
+        if(sceltaShader==2 || sceltaShader==3) //Gourad shading
+        {
+            result = LightingColor; 
+        }
+        else if(sceltaShader==0) //shading Phong
         {
             vec3 reflectDir = reflect(-lightDir, norm);  
             spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-        }else
+        }
+        else if(sceltaShader==1) //shading Phong
         {
             vec3 halfwayDir = normalize(lightDir + viewDir);
             spec = pow(max(dot(norm, halfwayDir), 0.0), material.shininess);
         }
+        
         vec3 specular = pointLights[i].specular * (spec * material.specular);  
         result += ambient + diffuse + specular;
     }
@@ -58,10 +65,6 @@ void main()
     //FragColor = textureColor; 
     //FragColor = vec4(result, 1.0);
     //FragColor = mix(vec4(result, 1.0), textureColor, mixFactor);
-    
-    /*if(viewBB){
-        FragColor = fragColor; 
-    }*/
 
     if (mixFactor == 1.0){
         FragColor = textureColor;

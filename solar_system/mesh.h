@@ -24,7 +24,9 @@ enum meshType {
 
 enum shaderOpt {
 	Phong,
-	BlinnPhong
+	BlinnPhong, 
+	PhongGourad, 
+	BlinnPhongGourad
 };
 
 class Mesh {

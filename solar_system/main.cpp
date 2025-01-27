@@ -97,12 +97,6 @@ int main()
     // load cubemap texture
     vector<std::string> faces
     {
-        /*"right.jpg",
-            "left.jpg",
-            "top.jpg",
-            "bottom.jpg",
-            "front.jpg",
-            "back.jpg"*/
             SkyboxDir + "posx.jpg",
             SkyboxDir + "negx.jpg",
             SkyboxDir + "posy.jpg",
@@ -263,12 +257,11 @@ int main()
             for (int i = 0; i < sceneObj.size(); i++)
                 sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader), BBShader);
 
-            system("cls");
-
+            
             // collision detections
             for (int i = 0; i < scene.size(); i++) {
                 if (Utils().isColliding(camera.Position, scene[i])) {
-                    camera.Position += glm::normalize(camera.Position - scene[i].positions);
+                    camera.Position += 0.1f * glm::normalize(camera.Position - scene[i].positions);
                     camera.Direction = glm::normalize(camera.Target - camera.Position);
                     camera.Target = camera.Position + camera.Direction;
                 }

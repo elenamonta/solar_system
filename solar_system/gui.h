@@ -11,7 +11,6 @@ extern vector<Mesh> scene;
 
 class Gui {
 	public:
-
 		int selectedMaterialType = 0;
 		int selectedShader = 0; 
 		bool flagBB = false; 
@@ -83,7 +82,7 @@ class Gui {
 			bool material = Combo("Tipo di Materiale", &selectedMaterialType, materialNames, IM_ARRAYSIZE(materialNames));
 
 			const char* shaderOption[] = {
-				"Phong", "Blinn Phong"
+				"Phong", "Blinn Phong", "Phong Gourad", "Blinn Phong Gourad"
 			};
 
 			bool shader = Combo("Scelta shader", &selectedShader, shaderOption, IM_ARRAYSIZE(shaderOption));
