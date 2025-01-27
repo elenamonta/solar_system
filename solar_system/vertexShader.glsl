@@ -37,7 +37,8 @@ void main()
 {
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal;  
-    TexCoords = aTexCoords;
+    TexCoords = aTexCoords;    
+    LightingColor = vec3(0.0f); 
 
     //Gourad shading
     if (sceltaShader == 2 || sceltaShader == 3) {
@@ -70,6 +71,5 @@ void main()
         }
         LightingColor = result; 
     }
-
     gl_Position = projection * view * vec4(FragPos, 1.0);
 }

@@ -128,7 +128,6 @@ int main()
     // build and compile shader program
     Shader lightingShader("vertexShader.glsl", "fragmentShader.glsl");
     Shader skyboxShader("vertexShader_CubeMap.glsl", "fragmentShader_CubeMap.glsl");
-    Shader BBShader("vertexShaderBB.glsl", "fragmentShaderBB.glsl");
 
     // build the skybox as if it were a mesh
     Mesh sky(meshType::cubo, "", vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0f, 0.0f, 0.0f), 0.0f);
@@ -255,7 +254,7 @@ int main()
                 scene[i].draw(lightingShader, 1.0f);
 
             for (int i = 0; i < sceneObj.size(); i++)
-                sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader), BBShader);
+                sceneObj[i].draw(lightingShader, static_cast<shaderOpt>(imgui.selectedShader));
 
             
             // collision detections

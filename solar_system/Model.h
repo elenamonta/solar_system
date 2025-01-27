@@ -35,7 +35,7 @@ public:
 	}
 
 	// rendering function
-	void draw(Shader& shader, shaderOpt shaderType, Shader& shBB)
+	void draw(Shader& shader, shaderOpt shaderType)
 	{
 		for (int i = 0; i < Model3D.size(); i++) {
 			Model3D[i].setShader(shaderType); 
