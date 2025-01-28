@@ -246,7 +246,4 @@ private:
 			this->max_BB = Model3D[i].Model * this->max_BB;
 		}
 	}
-
-	
-
 };
